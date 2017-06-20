@@ -8,6 +8,43 @@ import plot_funcs
 import numpy as np
 
 
+def update_buffer(f):
+    """Mutates the data in self.data according to buffer index/name and
+    axis returned by the decorated function. The first argument after self
+    to any decorated function must be the singular buffer being mutated.
+
+    Intended to decouple self.data implementation details from the methods
+    of the Savuka class."""
+
+    def wrapper(self, buffer_index, *args, **kwargs):
+
+        # if no kwarg 'axis' provided, defaults to mutating y values.
+        axis = kwargs.get('axis')
+
+        # all access to data is done through this function. Each data
+        # manipulation methods of Savuka class takes in this 'buf' argument.
+        buf = self.get_buffers(buffer_index)[axis_to_index(axis)]
+
+        # calculation
+        new_data = f(self, buf, *args, **kwargs)
+
+        # mutate Savuka instance
+        self.data[buffer_index][axis_to_index(axis)] = new_data
+
+    def axis_to_index(axis):
+        # dependent on self.data implementation details
+
+        # default behavior is to change y
+        if axis == 'y' or axis is None:
+            return 2
+        elif axis == 'x':
+            return 1
+        elif axis == 'z':
+            return 0
+
+    return wrapper
+
+
 class Savuka:
 
     def __init__(self):
@@ -56,7 +93,13 @@ class Savuka:
             self.data[-1, -3, 0]))
 
     def is_empty(self):
-        return self.data.shape == (0,)
+        return self.dimensionality() == (0,)
+
+    def dimensionality(self):
+        return self.data.shape
+
+    def num_buffers(self):
+        return self.dimensionality()[0]
 
     def set_name(self, buf_range, name):
         assert isinstance(buf_range, tuple) or isinstance(buf_range, int), "" \
@@ -71,29 +114,23 @@ class Savuka:
         except KeyError:
             print("no buffer(s) named {0}".format(name))
 
-    def dimensionality(self):
-        return self.data.shape
-
-    def num_buffers(self):
-        return self.dimensionality()[0]
-
     def get_buffers(self, idx):
         """returns the array of x, y, and the z value of the buffer. Each
         buffer has the form [[z],[x],[y]]"""
 
-        # -2 index of data size should always correspond to x dimension
-        current_x = self.data.shape[-2]
         if isinstance(idx, int):
-            #TODO change assertions to try: except.
-            assert 0 <= idx <= current_x, "buffer {0} not accessible" \
-                    " with data shape {1}".format(idx, self.data.shape)
-            return self.data[idx]
+            try:
+                return self.data[idx]
+            except IndexError:
+                print("buffer {0} not accessible"
+                      " with data shape {1}".format(idx, self.data.shape))
         elif isinstance(idx, tuple):
-            assert 0 <= idx[0] <= current_x and 0 <= idx[1] <= current_x, "" \
-            "buffer {0} not accessible " \
-            "with data shape {1}".format(idx, self.data.shape)
-            bufs = [self.data[x] for x in range(idx[0], idx[1] + 1)]
-            return bufs
+            try:
+                bufs = [self.data[x] for x in range(idx[0], idx[1] + 1)]
+                return bufs
+            except IndexError:
+                print("buffer {0} not accessible"
+                      " with data shape {1}".format(idx, self.data.shape))
 
     def get_xs(self, buffer, start=0, end=0):
         # TODO add dimension checks
@@ -117,6 +154,65 @@ class Savuka:
     def get_z(self, buffer):
         """return the zingle z value for the buffer."""
         return buffer[0, 0]
+
+    def update_buffers(self, buffer_index, new_buffer, axis='y'):
+
+        def axis_to_index(axis):
+            # dependent on self.data implementation details
+
+            # default behavior is to change y
+            if axis == 'y' or axis is None:
+                return 2
+            elif axis == 'x':
+                return 1
+            elif axis == 'z':
+                return 0
+
+        self.data[buffer_index][axis_to_index(axis)] = new_buffer
+
+    def add_buffers(self, buffer_index1, buffer_index2, axis='y'):
+
+        b1 = self.get_buffers(buffer_index1)
+        b2 = self.get_buffers(buffer_index2)
+
+        # interpolates the values of b2 based on the y vals of b1.
+        add_to_b2 = np.interp(self.get_xs(b1), self.get_xs(b2), self.get_ys(b2))
+
+        new_y = b2[2] + add_to_b2
+
+        self.update_buffers(buffer_index2, new_y)
+
+    def multiply_buffers(self, buffer_index1, buffer_index2, axis='y'):
+
+        b1 = self.get_buffers(buffer_index1)
+        b2 = self.get_buffers(buffer_index2)
+
+        # interpolates the values of b2 based on the y vals of b1.
+        add_to_b2 = np.interp(self.get_xs(b1), self.get_xs(b2), self.get_ys(b2))
+
+        new_y = b2[2] * add_to_b2
+
+        self.update_buffers(buffer_index2, new_y)
+
+    def shift_buffer(self, buffer_index, delta, axis='y'):
+        buf = self.get_ys(self.get_buffers(buffer_index))
+
+        # numpy adds delta to each elt in an array by default.
+        new_buf = buf + delta
+
+        self.update_buffers(buffer_index, new_buf, 'y')
+
+    def scale_buffer(self, buffer_index, sigma, axis='y'):
+        buf = self.get_ys(self.get_buffers(buffer_index))
+        new_buf = buf * sigma
+
+        self.update_buffers(buffer_index, new_buf, 'y')
+
+    def pow_buffer(self, buffer_index, exp, axis='y'):
+        buf = self.get_ys(self.get_buffers(buffer_index))
+        new_buf = buf ** exp
+
+        self.update_buffers(buffer_index, new_buf, 'y')
 
     def plot_all_buffers(self):
         return plot_funcs.plot_all(self)

@@ -1,4 +1,5 @@
 import savuka
+import plot_funcs
 import utils
 import svd
 
@@ -59,6 +60,7 @@ class CommandLine(cmd.Cmd):
                     " enter a new one: ".format(formstyle))
                 return self.read_help(filepaths, newformstyle)
 
+    @plot_funcs.show_after_completion
     def do_plot(self, line):
         """usage: plot |
             plot (start, end) (start, end) ...
@@ -90,7 +92,6 @@ class CommandLine(cmd.Cmd):
                     else:
                         print("the given option"
                               " is unsupported: {0}\n{1}".format(x, e))
-        plt.show()
 
     def do_svd(self, line):
         """usage: svd [file path] [# of spectra]

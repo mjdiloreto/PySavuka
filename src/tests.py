@@ -167,6 +167,7 @@ class TestPysavuka(unittest.TestCase):
         s = savuka.Savuka()
         s.read(self.xyexample1, 'example')
         s.read(self.xyexample2, 'example')
+        s.shift_buffer(0, 100)
         s.plot_all_buffers()
 
     def debug_utils(self):
@@ -188,6 +189,6 @@ if __name__ == '__main__':
     t = TestPysavuka()
     t.setUp()
     # t.debug_utils()
-    # t.debug_savuka()
+    t.debug_savuka()
     # t.debug_plot_funcs()
-    t.debug_check_input()
+    # t.debug_check_input()

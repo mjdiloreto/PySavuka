@@ -2,6 +2,18 @@ import utils
 import matplotlib.pyplot as plt
 
 
+def show_after_completion(f):
+    """Decorator for functions/Savuka methods which should display plots
+    once they have been staged. None of the functions in this module
+    (plot_funcs.py) should call 'plt.show()'"""
+
+    def wrapper(self, *args, **kwargs):
+        f(self, *args, **kwargs)
+        plt.show()
+
+    return wrapper
+
+
 def plot_all(sav):
     for x in range(sav.num_buffers()):
         plot_single_buffer(sav, x)
