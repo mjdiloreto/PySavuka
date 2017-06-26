@@ -115,3 +115,24 @@ def check_input(exceptions_and_params={}):
         return wrapper
 
     return decorator
+
+
+def print_dimension_dict(data_dict, *args, **kwargs):
+    # Todo generalize this for dataobject, or do __repr__
+    print("parsed {0} values for {1}={2} ===> [{3}, {4}, ..., {5}, {6}]"
+          "".format(data_dict.get('dim1').name,
+                    data_dict.get('dim3').name,
+                    data_dict.get('dim3').data,
+                    data_dict.get('dim1').data[0],
+                    data_dict.get('dim1').data[1],
+                    data_dict.get('dim1').data[-2],
+                    data_dict.get('dim1').data[-1]))
+
+    print("parsed {0} values for {1}={2} ===> [{3}, {4}, ..., {5}, {6}]"
+          "".format(data_dict.get('dim2').name,
+                    data_dict.get('dim3').name,
+                    data_dict.get('dim3').data,
+                    data_dict.get('dim2').data[0],
+                    data_dict.get('dim2').data[1],
+                    data_dict.get('dim2').data[-2],
+                    data_dict.get('dim2').data[-1]))

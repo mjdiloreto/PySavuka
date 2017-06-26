@@ -166,9 +166,18 @@ class TestPysavuka(unittest.TestCase):
     def debug_savuka(self):
         s = savuka.Savuka()
         s.read(self.xyexample1, 'example')
-        s.read(self.xyexample2, 'example')
-        s.shift_buffer(0, 100)
-        s.plot_all_buffers()
+        s.read(self.xyexample1, 'example')
+        s.read(self.xyexample1, 'example')
+        s.read(self.xyexample1, 'example')
+
+        s.shift_buffer(1, 100)
+        s.scale_buffer(2, 5)
+        s.pow_buffer(3, 2)
+        s.plot_superimposed([0,1,2,3,])
+
+    def debug_parse_funcs(self):
+        s = savuka.Savuka()
+        s.read(self.xyexample1, 'example')
 
     def debug_utils(self):
         print(utils.parseline('a b -s c r (1, 3)', 'arg'))
@@ -192,3 +201,4 @@ if __name__ == '__main__':
     t.debug_savuka()
     # t.debug_plot_funcs()
     # t.debug_check_input()
+    # t.debug_parse_funcs()

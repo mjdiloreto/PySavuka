@@ -65,3 +65,6 @@ target/
 #PyCharm folders
 .idea
 
+#Things I'm working on
+dimension.py
+

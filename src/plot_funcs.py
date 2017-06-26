@@ -19,7 +19,7 @@ def plot_all(sav):
         plot_single_buffer(sav, x)
 
 
-def plot_buffers(sav, buf_range):
+def plot_buffers(sav, buf_range, *args):
     b = utils.eval_string(buf_range)
     try:
         if isinstance(b, int):
@@ -30,6 +30,10 @@ def plot_buffers(sav, buf_range):
         else:
             print("You must enter either an integer or length 2 tuple as "
                   "an argument to plot. You entered: {0}".format(buf_range))
+
+        # supports variable arity (variable arguments) kind of hackish.
+        for arg in args:
+            plot_buffers(sav, arg)
     except Exception as e:
         print("You may only specify an integer or tuple for the buffer."
               " You entered: {0} \n{1}".format(buf_range, e.__class__.__name__))
