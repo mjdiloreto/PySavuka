@@ -2,9 +2,9 @@
 as the context object for the program. It contains all data parsed by the
 user, and methods to analyze that data."""
 
-import parse_funcs
-import plot_funcs
-import utils
+from . import parse_funcs
+from . import plot_funcs
+from . import utils
 
 import numpy as np
 
@@ -48,6 +48,9 @@ def update_buffer(f):
 
 class Savuka:
 
+    def __len__(self):
+        return len(self.data)
+
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified
         # by the individual parsing functions in the parse_funcs module
@@ -73,12 +76,18 @@ class Savuka:
     def num_buffers(self):
         return len(self.data)
 
-    def set_name(self, buf_range, name):
-        assert isinstance(buf_range, tuple) or isinstance(buf_range, int), "" \
-            "Name can only be assigned to " \
-            "valid buffer range: {0}".format(buf_range)
-        assert isinstance(name, str), "Name must be a string: {0}".format(name)
-        self.attributes[name] = buf_range
+    def set_name(self, buf, name):
+        if isinstance(buf, int) and isinstance(name, str):
+            self.attributes[name] = buf
+        else:
+            print("no names were changed for buffer {0} and name {1}"
+                  "".format(buf, name))
+
+    def set_names(self, buf_range, name):
+        if isinstance(buf_range, tuple):
+            # give all the buffers the same name. add 1 b/c semi-open interval
+            for i in range(buf_range[0], buf_range[1] + 1):
+                self.set_name(i, name)
 
     def get_buffer_by_name(self, name):
         try:
@@ -86,52 +95,54 @@ class Savuka:
         except KeyError:
             print("no buffer(s) named {0}".format(name))
 
-    def get_buffers(self, idx):
+    def get_buffer(self, idx):
         """returns the array of x, y, and the z value of the buffer. Each
         buffer has the form [[z],[x],[y]]"""
 
-        if isinstance(idx, int):
-            try:
-                return self.data[idx]
-            except IndexError:
-                print("buffer {0} not accessible"
-                      " with data shape {1}".format(idx, self.data.shape))
-        elif isinstance(idx, tuple):
-            try:
-                # return a generator which yields the buffers. Usable as *bufs
-                bufs = (self.data[x] for x in range(idx[0], idx[1] + 1))
-                return bufs
-            except IndexError:
-                print("buffer {0} not accessible"
-                      " with data shape {1}".format(idx, self.data.shape))
+        try:
+            return self.data[idx]
+        except IndexError:
+            print("buffer {0} not accessible"
+                  " with data length {1}".format(idx, len(self)))
 
-    def get_xs(self, buffer, start=0, end=0):
+    def get_buffers(self, buf_range):
+        if isinstance(buf_range, tuple):
+            # return a generator which yields the buffers. Usable as *bufs
+            bufs = (self.get_buffer(x) for x in range(buf_range[0],
+                                                      buf_range[1] + 1))
+            return bufs
+        elif isinstance(buf_range, int):
+            return self.get_buffer(buf_range)
+
+    def get_xs(self, idx, start=0, end=0):
         """returns the x values within the range of the given buffer."""
+        buffer = self.data[idx]
         allxs = buffer.get('dim1').data
         if end == 0:
             return allxs
         else:
             return allxs[start:end]
 
-    def get_ys(self, buffer, start=0, end=0):
+    def get_ys(self, idx, start=0, end=0):
         """returns the y values within the range of the given buffer. Each
         buffer has the form [[z],[x],[y]]"""
+        buffer = self.data[idx]
         allys = buffer.get('dim2').data
         if end == 0:
             return allys
         else:
             return allys[start:end]
 
-    def get_z(self, buffer):
+    def get_z(self, idx):
         # TODO what about 4+ dimension data?
         """return the zingle z value for the buffer."""
+        buffer = self.data[idx]
         return buffer.get('dim3')
 
     def update_buffers(self, buffer_index, new_data, dim='dim2'):
         self.data[buffer_index][dim] = new_data
 
     def add_buffers(self, buffer_index1, buffer_index2, axis='y'):
-
         b1 = self.get_buffers(buffer_index1)
         b2 = self.get_buffers(buffer_index2)
 

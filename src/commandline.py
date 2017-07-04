@@ -1,21 +1,21 @@
-import savuka
-import plot_funcs
-import utils
-import svd
+from . import savuka
+from . import plot_funcs
+from . import utils
+from . import svd
 
 import cmd
 import matplotlib.pyplot as plt
 import re
-
-from os import path
+import os
 
 # don't change the location of any files in this package.
-library_root = path.abspath(path.join(__file__, "..\.."))
+library_root = os.path.abspath(os.path.join(__file__, "..\.."))
 
-formats_path = path.join(library_root, r'docs\supported_formats.txt')
+formats_path = os.path.join(library_root, r'docs\supported_formats.txt')
 
 FORMATS = open(formats_path).read()
 
+# TODO change tuple command to use int-int syntax and convert that to tuple
 
 
 class CommandLine(cmd.Cmd):
@@ -127,7 +127,7 @@ class CommandLine(cmd.Cmd):
 
 
 def main():
-    return CommandLine().cmdloop()
+    CommandLine().cmdloop()
 
 
 if __name__ == '__main__':

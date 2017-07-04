@@ -12,30 +12,22 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open(path.join(here, 'HISTORY.rst'), encoding='utf-8') as history_file:
-    history = history_file.read().replace('.. :changelog:', '')
-
 requirements = [
     # TODO: put package requirements here
     'numpy',
     'matplotlib',
-    'tkinter'
 ]
 
 test_requirements = [
     # TODO: put package test requirements here
-    'numpy',
     'unittest',
-    'os'
 ]
-
-
 
 setup(
     name='pysavuka',
     version='1.0',
     description="pysavuka",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Matthew DiLoreto",
     author_email='mjdiloreto@gmail.com',
     url='https://github.com/mjdiloreto/pysavuka',

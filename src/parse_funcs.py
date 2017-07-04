@@ -89,7 +89,7 @@ def parse_example(files):
         data_dict = {'dim1': Dimension(xs, 'x'),
                      'dim2': Dimension(ys, 'y'),
                      # findall returns a list
-                     'dim3': Dimension(dim3[0], dim3_name[0]),
+                     'dim3': Dimension(floatify(dim3[0]), dim3_name[0]),
                      'filename': files,
                      'format': 'example'}
 
