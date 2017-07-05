@@ -2,9 +2,9 @@
 as the context object for the program. It contains all data parsed by the
 user, and methods to analyze that data."""
 
-from . import parse_funcs
-from . import plot_funcs
-from . import utils
+from src import parse_funcs
+from src import plot_funcs
+from src import utils
 
 import numpy as np
 
@@ -51,6 +51,14 @@ class Savuka:
     def __len__(self):
         return len(self.data)
 
+    def __repr__(self):
+        # representation of the data. Called with built-in print function
+        r = ""
+        for i, buf in enumerate(self.data):
+            # TODO, print the attributes as {0}
+            r += "\nbuffer {0}: {1}".format(i, buf)
+        return r
+
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified
         # by the individual parsing functions in the parse_funcs module
@@ -67,14 +75,18 @@ class Savuka:
         # parse the file according to the formstyle specified by the user
         data_dict = parse_funcs.parse(filepath, formstyle)
 
+        # The hash value of the buffer must be unique, so this simple algorithm
+        # ensures that no buffer in self will have hash collisions with others.
+        data_dict['hash'] = len(self) + 1
+
         # add the parsed data to the list
         self.data.append(data_dict)
 
         # show the user the x and y values they parsed in
-        utils.print_dimension_dict(data_dict)
+        print("\nSavuka read in the following data:\n" + str(data_dict))
 
     def num_buffers(self):
-        return len(self.data)
+        return len(self)
 
     def set_name(self, buf, name):
         if isinstance(buf, int) and isinstance(name, str):
@@ -106,22 +118,29 @@ class Savuka:
                   " with data length {1}".format(idx, len(self)))
 
     def get_buffers(self, buf_range):
-        if isinstance(buf_range, tuple):
+        if isinstance(buf_range, range):
             # return a generator which yields the buffers. Usable as *bufs
+            b = (self.get_buffer(x) for x in buf_range)
+            return b
+        elif isinstance(buf_range, tuple):
             bufs = (self.get_buffer(x) for x in range(buf_range[0],
                                                       buf_range[1] + 1))
             return bufs
         elif isinstance(buf_range, int):
-            return self.get_buffer(buf_range)
+            # we must be guaranteed to return a tuple so we can use * unpacking
+            b = (self.get_buffer(buf_range),)
+            return b
 
     def get_xs(self, idx, start=0, end=0):
         """returns the x values within the range of the given buffer."""
+
         buffer = self.data[idx]
-        allxs = buffer.get('dim1').data
-        if end == 0:
-            return allxs
-        else:
-            return allxs[start:end]
+        return buffer.get_xs(start, end)
+    ''' allxs = buffer.get('dim1').data
+    if end == 0:
+        return allxs
+    else:
+        return allxs[start:end]'''
 
     def get_ys(self, idx, start=0, end=0):
         """returns the y values within the range of the given buffer. Each
@@ -143,8 +162,8 @@ class Savuka:
         self.data[buffer_index][dim] = new_data
 
     def add_buffers(self, buffer_index1, buffer_index2, axis='y'):
-        b1 = self.get_buffers(buffer_index1)
-        b2 = self.get_buffers(buffer_index2)
+        b1 = self.get_buffer(buffer_index1)
+        b2 = self.get_buffer(buffer_index2)
 
         # interpolates the values of b2 based on the y vals of b1.
         # Todo cubic spline interpolation. Include flag for doing interpolation
@@ -156,8 +175,8 @@ class Savuka:
 
     def multiply_buffers(self, buffer_index1, buffer_index2, axis='y'):
 
-        b1 = self.get_buffers(buffer_index1)
-        b2 = self.get_buffers(buffer_index2)
+        b1 = self.get_buffer(buffer_index1)
+        b2 = self.get_buffer(buffer_index2)
 
         # interpolates the values of b2 based on the y vals of b1.
         print("interpolating ... ")
@@ -168,7 +187,7 @@ class Savuka:
         self.update_buffers(buffer_index2, new_y)
 
     def shift_buffer(self, buffer_index, delta, dim='dim2'):
-        buf = self.get_ys(self.get_buffers(buffer_index))
+        buf = self.get_buffer(buffer_index).get_ys()
 
         # numpy adds delta to each elt in an array by default.
         new_buf = buf + delta
@@ -176,26 +195,23 @@ class Savuka:
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
     def scale_buffer(self, buffer_index, sigma, dim='dim2'):
-        buf = self.get_ys(self.get_buffers(buffer_index))
+        buf = self.get_buffer(buffer_index).get_ys()
         new_buf = buf * sigma
 
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
     def pow_buffer(self, buffer_index, exp, dim='dim2'):
-        buf = self.get_ys(self.get_buffers(buffer_index))
+        buf = self.get_buffer(buffer_index).get_ys()
         new_buf = buf ** exp
 
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
     @plot_funcs.show_after_completion
-    def plot_all_buffers(self):
-        return plot_funcs.plot_all(self)
-
-    @plot_funcs.show_after_completion
     def plot_buffers(self, buf_range):
-        return plot_funcs.plot_buffers(self, buf_range)
+        print(self.get_buffers(buf_range))
+        return plot_funcs.plot_buffers(*self.get_buffers(buf_range))
 
     @plot_funcs.show_after_completion
-    def plot_superimposed(self, buf_list):
-        return plot_funcs.plot_superimposed(self, buf_list)
+    def plot_superimposed(self, buf_range):
+        return plot_funcs.plot_superimposed(*self.get_buffers(buf_range))
 

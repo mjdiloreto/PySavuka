@@ -16,21 +16,11 @@ For example, any 'parse_*' function should return something like:
 There is no limit to the amount of metadata that can be stored in the
 dictionary, because specific routines will only require certain fields like
 dim1, dim2, etc."""
+from src import buffer
 
 import re
 import numpy as np
 from collections import namedtuple
-
-# Define a new type of data, which is a container called 'Dimension'
-# That will be used to store all parsed data and the name of that data.
-# For example, if measuring light intensity over time, the data would be parsed
-# into 2 dimensions, one with the name 'intensity' and the y data from the
-# experiment, and another called 'time' with the x data.
-
-# This structure is used in each dictionary returned by these parse_funcs
-# as the values to the keys named 'dim1','dim2',etc.
-# new Dimension instances are made via: Dimension([...],'name')
-Dimension = namedtuple('Dimension', ['data', 'name'])
 
 
 def parse(filepath, formstyle):
@@ -40,7 +30,14 @@ def parse(filepath, formstyle):
 
     # evaluate the function of the associated formating style.
     # this can raise a NameError if the formstyle is undefined.
-    return eval("parse_" + formstyle + "(filepath)")
+    buf = eval("parse_" + formstyle + "(filepath)")
+
+    assert isinstance(buf, buffer.Buffer), "The parsing function for type {0}" \
+        "does not return a instance of a Buffer as defined in module buffer" \
+        "it currently returns {1}. You must edit the parse_{0) function in " \
+        "pysavuka/src/parse_funcs module to return a Buffer object."
+
+    return buf
 
 
 def floatify(s):
@@ -53,7 +50,14 @@ def floatify(s):
 
 def parse_example(files):
     """Parse the format specified by ../docs/xyexample1.txt
-    Return the dictionary of parsed data as Dimension instances and metadata."""
+    Return the Buffer(a dictionary) of the data and metadata.
+    All data should be parsed in the form:
+    {
+    'dimx': Dimension(numpy.array(...), string)
+    }
+    metadata can be in any form, as long as the subroutines that require access
+    to them address them by the correct name in the Buffer object."""
+
     with open(files) as f:
         split_lines = [re.split(',', line) for line in f]
 
@@ -85,13 +89,18 @@ def parse_example(files):
         # The name of the dimension preceding dim3. In above example, 'urea'
         dim3_name = re.findall('[a-z]+(?==)', split_lines[0][0])
 
-        # data can be accessed by: data_dict.get('key').data
-        data_dict = {'dim1': Dimension(xs, 'x'),
-                     'dim2': Dimension(ys, 'y'),
+        # show what we put into the Buffer object for visual purposes.
+        data_dict = {'dim1': buffer.Dimension(xs, 'x'),
+                     'dim2': buffer.Dimension(ys, 'y'),
                      # findall returns a list
-                     'dim3': Dimension(floatify(dim3[0]), dim3_name[0]),
+                     'dim3': buffer.Dimension(floatify(dim3[0]), dim3_name[0]),
                      'filename': files,
                      'format': 'example'}
+
+        # create a Buffer object. It's just like a regular dictionary, but
+        # includes functionality specific to the behavior expected from xy pairs
+        # of data
+        data_dict = buffer.Buffer(data_dict)
 
         return data_dict
 

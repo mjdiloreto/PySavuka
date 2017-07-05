@@ -11,12 +11,12 @@ Tests for `PySavuka` module.
 import unittest
 import os
 
-from . import commandline
-from . import savuka
-from . import parse_funcs
-from . import plot_funcs
-from . import utils
-from . import buffer
+from src import commandline
+from src import savuka
+from src import parse_funcs
+from src import plot_funcs
+from src import utils
+from src import buffer
 
 
 class TestPysavuka(unittest.TestCase):
@@ -90,7 +90,7 @@ class TestPysavuka(unittest.TestCase):
         plot_funcs.plot_all(s)
         plt.show()
 
-    def debug_savuka(self):
+    def test_savuka(self):
         s = savuka.Savuka()
         s.read(self.xyexample1, 'example')
         s.read(self.xyexample1, 'example')
@@ -100,7 +100,8 @@ class TestPysavuka(unittest.TestCase):
         s.shift_buffer(1, 100)
         s.scale_buffer(2, 5)
         s.pow_buffer(3, 2)
-        s.plot_superimposed([0,1,2,3,])
+        # s.plot_superimposed([0,1,2,3,])
+        print(s)
 
     def debug_parse_funcs(self):
         s = savuka.Savuka()

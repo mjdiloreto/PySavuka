@@ -94,8 +94,8 @@ def check_input(exceptions_and_params={}):
             try:
                 # first call should break if second will. Before asking for data
                 arg = kwargs[param]
-                kwargs[param] = input("The specified kwarg {0} resulted in the"
-                                      " error\n{1}: {2}.\nTry again: "
+                kwargs[param] = input("The specified kwarg <{0}> resulted in "
+                                      "the error\n{1}: {2}.\nTry again: "
                                       "".format(arg, e.__class__, e))
             # If param isn't in kwargs it must be an integer
             except KeyError:
@@ -103,8 +103,8 @@ def check_input(exceptions_and_params={}):
 
                 # we need to call the function again with new params
                 temp_list = list(args)
-                temp_list[param] = input("The specified arg {0} resulted in the"
-                                         " error\n{1}: {2}.\nTry again: "
+                temp_list[param] = input("The specified arg <{0}> resulted in "
+                                         "the error\n{1}: {2}.\nTry again: "
                                          "".format(arg, e.__class__, e))
 
                 # args is always a tuple.

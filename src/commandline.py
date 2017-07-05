@@ -1,10 +1,9 @@
-from . import savuka
-from . import plot_funcs
-from . import utils
-from . import svd
+from src import savuka
+from src import plot_funcs
+from src import utils
+from src import svd
 
 import cmd
-import matplotlib.pyplot as plt
 import re
 import os
 
@@ -72,7 +71,7 @@ class CommandLine(cmd.Cmd):
             or python tuples)."""
         if line is "":
             # default behavior is to plot everything in separate windows.
-            self.savuka.plot_all_buffers()
+            self.savuka.plot_buffers(range(len(self.savuka)))
         else:
             # spaces not preceded by commas are used to break up arguments.
             # '(0, 1)' should be represented as '(0, 1)' not '(0,' and '1)'
@@ -90,8 +89,7 @@ class CommandLine(cmd.Cmd):
                                                                line)[idx+1:])
                         break
                     else:
-                        print("the given option"
-                              " is unsupported: {0}\n{1}".format(x, e))
+                        self.default("{0}\n{1}".format(x, e))
 
     def do_svd(self, line):
         """usage: svd [file path] [# of spectra]
@@ -115,7 +113,14 @@ class CommandLine(cmd.Cmd):
             parsed = cmd.Cmd.parseline(self, line)
             return self.load_help(parsed[0], parsed[1])
 
+    @utils.check_input(exceptions_and_params={})
+    def do_print(self, line):
+        if line is "":
+            print(self.savuka)
+            # Todo make line params specify buffer indices and names to print
+
     @utils.check_input(exceptions_and_params={FileNotFoundError: 0,
+                                              SyntaxError: 1,
                                               NameError: 1})
     def load_help(self, filepath, formstyle):
         self.savuka.read(filepath, formstyle)

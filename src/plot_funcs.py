@@ -1,4 +1,7 @@
-from . import utils
+"""Each of the functions in this module takes, as an argument, at least
+one instance of a Buffer as defined in the module buffer."""
+
+from src import utils
 import matplotlib.pyplot as plt
 
 
@@ -14,29 +17,23 @@ def show_after_completion(f):
     return wrapper
 
 
-def plot_all(sav):
-    for x in range(sav.num_buffers()):
-        plot_single_buffer(sav, x)
-
-
-def plot_buffers(sav, buf_range, *args):
-    b = utils.eval_string(buf_range)
+def plot_buffer(buf):
+    """Plots the x and y data of the buffer in the subplot of given idx.
+    Subplots should be unique to each buffer being plotted. Collisions in
+    idx will result in overwriting of previously queued data."""
     try:
-        if isinstance(b, int):
-            plot_single_buffer(sav, b)
-        elif isinstance(b, tuple) and len(b) == 2:
-            for x in range(b[0], b[0] + len(b)):
-                plot_single_buffer(sav, x)
-        else:
-            print("You must enter either an integer or length 2 tuple as "
-                  "an argument to plot. You entered: {0}".format(buf_range))
+        print("\nplotting buffer(s): {0}".format(buf))
+        plt.figure(buf['hash'])
+        plt.plot(buf.get_xs(), buf.get_ys())
+    except IndexError:
+        print("There is no buffer at"
+              " the given index: {0}".format(buf))
 
-        # supports variable arity (variable arguments) kind of hackish.
-        for arg in args:
-            plot_buffers(sav, arg)
-    except Exception as e:
-        print("You may only specify an integer or tuple for the buffer."
-              " You entered: {0} \n{1}".format(buf_range, e.__class__.__name__))
+
+def plot_buffers(*args):
+    # plot all the Buffer objects
+    for arg in args:
+        plot_buffer(arg)
 
 
 def plot_superimposed(sav, buf_list):
@@ -69,12 +66,4 @@ def plot_superimposed(sav, buf_list):
     plt.plot(*vals)
 
 
-def plot_single_buffer(sav, buffer):
-    try:
-        print("\nplotting buffer(s): {0}".format(buffer))
-        buf = sav.get_buffers(buffer)
-        plt.figure(buffer)
-        plt.plot(sav.get_xs(buf), sav.get_ys(buf))
-    except IndexError:
-        print("There is no buffer at"
-              " the given index: {0}".format(buffer))
+
