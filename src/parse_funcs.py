@@ -17,6 +17,7 @@ There is no limit to the amount of metadata that can be stored in the
 dictionary, because specific routines will only require certain fields like
 dim1, dim2, etc."""
 from src import buffer
+from src.utils import floatify
 
 import re
 import numpy as np
@@ -40,12 +41,6 @@ def parse(filepath, formstyle):
     return buf
 
 
-def floatify(s):
-    """Convert the string to a float, and return None if not possible."""
-    try:
-        return float(s)
-    except ValueError:
-        return
 
 
 def parse_example(files):

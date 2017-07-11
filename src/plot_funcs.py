@@ -2,19 +2,42 @@
 one instance of a Buffer as defined in the module buffer."""
 
 from src import utils
+
 import matplotlib.pyplot as plt
 
 
 def show_after_completion(f):
     """Decorator for functions/Savuka methods which should display plots
     once they have been staged. None of the functions in this module
-    (plot_funcs.py) should call 'plt.show()'"""
+    (plot_funcs.py) should call 'plt.show()'
+
+    Do not try to concurrently plot data and continue execution of program.
+    Because matplotlib is not threadsafe, there will be a huge workaround
+    involving the multiprocessing module. This means you must close all plots
+    before doing anything with the Savuka program."""
 
     def wrapper(self, *args, **kwargs):
+
         f(self, *args, **kwargs)
         plt.show()
 
     return wrapper
+
+
+def plot_xy(*args, **kwargs):
+
+    new_args = (eval(arg) for arg in args)
+    new_kwargs = {k: eval(v) for k, v in kwargs.items()}
+
+    _plot_xy(*new_args, **new_kwargs)
+
+
+def _plot_xy(xdata, ydata, **kwargs):
+    if kwargs:
+        plt.plot(xdata, kwargs['y'])
+    else:
+        plt.plot(xdata, ydata)
+    plt.show()
 
 
 def plot_buffer(buf):

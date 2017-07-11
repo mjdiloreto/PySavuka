@@ -1,3 +1,6 @@
+"""This module contains the main program loop and all code for commands passed
+to the program."""
+
 from src import savuka
 from src import plot_funcs
 from src import utils
@@ -6,6 +9,9 @@ from src import svd
 import cmd
 import re
 import os
+
+from sys import stderr, stdout
+from time import sleep
 
 # don't change the location of any files in this package.
 library_root = os.path.abspath(os.path.join(__file__, "..\.."))
@@ -24,10 +30,21 @@ class CommandLine(cmd.Cmd):
         super(CommandLine, self).__init__()
         self.savuka = savuka.Savuka()
 
+    def postcmd(self, stop, line):
+        # wait 1/10 second after each command. This fixes some weird
+        # printing bugs when color is involved.
+        sleep(0.1)
+
     def do_quit(self, line):
         """Exit savuka"""
         print("Exit")
         return True
+
+    def do_help(self, arg):
+        """Print help text in red. Kind of a hack since stderr is always red."""
+        self.stdout = stderr
+        cmd.Cmd.do_help(self, arg)
+        self.stdout = stdout
 
     # TODO add command to show data in savuka
 
@@ -95,40 +112,41 @@ class CommandLine(cmd.Cmd):
         """usage: svd [file path] [# of spectra]
         Singular value decomposition."""
 
-        filename = utils.get_filename()
-        spectra = input("\n# of spectra to be read: ")
-
-        return svd.svd(filename, spectra)
+        return svd.svd()
 
     def do_load(self, line):
-        """usage: read [file path] [format type]
+        """usage: load [file path] [format type]
             format type will be the name of the instrument
             used to collect the data. /docs/supported_formats.txt
             for more"""
+
+        @utils.check_input(exceptions_and_params={FileNotFoundError: 0,
+                                                  SyntaxError: 1,
+                                                  NameError: 1})
+        def load_help(filepath, formstyle):
+            self.savuka.read(filepath, formstyle)
+
         if line is "":
             filepath = input("\nFile path to be read: ")
             formstyle = input("\nWhat is the format of the file?: ")
-            return self.load_help(filepath, formstyle)
+            return load_help(filepath, formstyle)
         else:
             parsed = cmd.Cmd.parseline(self, line)
-            return self.load_help(parsed[0], parsed[1])
+            return load_help(parsed[0], parsed[1])
 
     @utils.check_input(exceptions_and_params={})
     def do_print(self, line):
+        """Display the data contents of the files read into the program."""
         if line is "":
             print(self.savuka)
             # Todo make line params specify buffer indices and names to print
 
-    @utils.check_input(exceptions_and_params={FileNotFoundError: 0,
-                                              SyntaxError: 1,
-                                              NameError: 1})
-    def load_help(self, filepath, formstyle):
-        self.savuka.read(filepath, formstyle)
+    def do_add(self, line):
+        """Add two buffers along the desired """
+        pass
 
-    @utils.check_input(exceptions_and_params={TypeError: 0,
-                                              ValueError: 0})
-    def check(self, idx, a='s'):
-        print("checking {0} {1}".format(a, float(idx)**2))
+    def do_skeleton(self, line):
+        print(utils.string_to_list(line))
 
 
 def main():

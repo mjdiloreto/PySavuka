@@ -19,21 +19,26 @@ class Buffer(dict):
         """String representation of Buffer. Show first two and last two
         values of each dataset, or, if not a dataset, show the key, value
         pairs as in a regular dictionary."""
-        s = "{"
+        s = ""
 
         for key, value in self.items():
             if isinstance(value, Dimension):
+                # x and y should be arrays
                 if isinstance(value.data, np.ndarray):
-                    s += "{0}: [{1}, {2}, . . . , {3}, {4}],\n"\
-                         "".format(value.name, value.data[0], value.data[1],
-                                   value.data[-2], value.data[-1])
+                    try:
+                        s += "{0}: [{1}, {2}, . . . , {3}, {4}],\n"\
+                             "".format(value.name, value.data[0], value.data[1],
+                                       value.data[-2], value.data[-1])
+                    except IndexError:
+                        s += "{0}: {1},\n".format(value.name, value.data)
+                # z1, z2, zn should be single values, if present.
                 else:
                     s += "{0}: {1},\n".format(value.name, value.data)
             else:
                 s += "{0}: {1}, ".format(key, value)
 
         # strip the final space and comma. Aesthetics only.
-        return s[:-2] + "}"
+        return "{" + s[:-2] + "}"
 
     def __init__(self, *args, **kwargs):
         super(Buffer)
@@ -47,9 +52,15 @@ class Buffer(dict):
             self[k] = v
 
         # minimum requirement is that there are x and y values
-        if not 'dim1' and 'dim2' in self:
-            self['dim1'] = Dimension([], 'default')
-            self['dim2'] = Dimension([], 'default')
+        if 'dim1' not in self:
+            self['dim1'] = Dimension(np.asarray([]), 'default')
+        if 'dim2' not in self:
+            self['dim2'] = Dimension(np.asarray([]), 'default')
+
+        # many calculations assume data are numpy arrays
+        assert isinstance(self['dim1'].data, np.ndarray) \
+            and isinstance(self['dim2'].data, np.ndarray), \
+            "first two dimensions in a Buffer must be numpy arrays."
 
     def get_xs(self, start=0, end=0):
         """returns the x values within the range of the given buffer."""
@@ -78,3 +89,33 @@ class Buffer(dict):
 
     def get_y_name(self):
         return self['dim2'].name
+
+    def add_to_x(self, data, interpolate=False):
+        current_x = self['dim1'].data
+        if isinstance(data, np.ndarray):
+            if current_x.shape == data.shape:
+                self['dim1'].data += data
+            elif interpolate:
+                print("using cubic spline interpolation on data")
+                # TODO cubic spline interpolation
+        elif isinstance(data, int):
+            self['dim1'].data += data
+
+    def add_to_y(self, data, interpolate=False):
+        current_y = self['dim2'].data
+        if isinstance(data, np.ndarray):
+            if current_y.shape == data.shape:
+                self['dim2'].data += data
+            elif interpolate:
+                print("using cubic spline interpolation on data")
+                # TODO cubic spline interpolation
+        elif isinstance(data, int):
+            self['dim2'].data += data
+
+
+if __name__ == '__main__':
+    b = Buffer()
+    print(b.__repr__())
+    b['a'] = 'b'
+    b1 = Buffer(b)
+    print(b1.__repr__())

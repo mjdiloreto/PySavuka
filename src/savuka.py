@@ -55,9 +55,10 @@ class Savuka:
         # representation of the data. Called with built-in print function
         r = ""
         for i, buf in enumerate(self.data):
-            # TODO, print the attributes as {0}
-            r += "\nbuffer {0}: {1}".format(i, buf)
-        return r
+            # TODO, print the attributes as {0}, if present. or organize by
+            # TODO attribute
+            r += "buffer {0}: {1},\n\n".format(i, buf)
+        return "\n[" + r[:-2] + "\n]\n"
 
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified
@@ -206,12 +207,9 @@ class Savuka:
 
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
-    @plot_funcs.show_after_completion
     def plot_buffers(self, buf_range):
-        print(self.get_buffers(buf_range))
         return plot_funcs.plot_buffers(*self.get_buffers(buf_range))
 
-    @plot_funcs.show_after_completion
     def plot_superimposed(self, buf_range):
         return plot_funcs.plot_superimposed(*self.get_buffers(buf_range))
 

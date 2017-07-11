@@ -1,14 +1,78 @@
 import tkinter as tk
+import itertools
 from tkinter import filedialog
 import re
+
+from collections import Iterable
 
 
 def get_filenames():
     """Prompt the user in a GUI for one or more file names."""
-    root = tk.Tk()
-    root.withdraw()
     file_path = filedialog.askopenfilenames()
     return file_path
+
+
+def floatify(s):
+    """Convert the string to a float, and return None if not possible."""
+    try:
+        return float(s)
+    except ValueError:
+        return
+
+
+def intify(s):
+    """Convert the string to an int, and return None if not possible."""
+    try:
+        return int(s)
+    except ValueError:
+        return
+
+
+def rangeify(s):
+    """Convert <int1-int2> into [int1, int1.1, int1.2, int1.3, ..., int2], and
+    return None if not possible"""
+    try:
+        bounds = re.split("-", s)
+        return tuple(range(intify(bounds[0]), intify(bounds[1])+1))
+    except IndexError:
+        return
+
+
+def parse_buffers(line):
+    """Creates a list of buffers entered by the use, either in the form
+    <0 1 3 4>, or <0-1 3-4>. Both will return [0,1,3,4]"""
+    a = []
+    # TODO come back and make this clever damn it.
+    for x in re.split("\s", line):
+        if intify(x):
+            a.append(intify(x))
+        elif rangeify(x):
+            for y in rangeify(x):
+                a.append(intify(y))
+
+    return a
+
+
+def string_to_numbers(s):
+    """Take the commandline line passed immediately after the command name
+    and return a tuple containing the list of arguments and a list of
+    options (anything preceded by -)"""
+    return [intify(x) or floatify(x) for x in re.split("\s", s)]
+
+
+def string_to_list(s):
+    """parse list syntax from "[1,2.4,3-6]" into [1, 2.4, 3, 4, 5, 6]"""
+    b = []
+
+    for x in re.split(",|\[|\]", s):
+        y = intify(x) or floatify(x) or rangeify(x)
+        if isinstance(y, Iterable):
+            for z in y:
+                b.append(z)
+        else:
+            if y is not None:
+                b.append(y)
+    return b
 
 
 def get_filename():
@@ -22,12 +86,11 @@ def get_filename():
 def eval_string(string):
     """return the proper python type of the object represented by the string,
     if it is in fact a string."""
-    a = string
     try:
         a = eval(string)
+        return a
     except TypeError:
-        pass
-    return a
+        return string
 
 
 def eval_string_list(l):
@@ -70,7 +133,8 @@ def check_input(exceptions_and_params={}):
     the function with a new input.
 
     Any method decorated with this function can pass a dictionary of exceptions
-    and the index of the corresponding arg, or the name of the kwarg."""
+    and the index of the corresponding arg (0 for the first argument, 1 for
+    the second, etc.), or the name of the kwarg."""
 
     def decorator(f):
 
@@ -116,23 +180,3 @@ def check_input(exceptions_and_params={}):
 
     return decorator
 
-
-def print_dimension_dict(data_dict, *args, **kwargs):
-    # Todo generalize this for dataobject, or do __repr__
-    print("parsed {0} values for {1}={2} ===> [{3}, {4}, ..., {5}, {6}]"
-          "".format(data_dict.get('dim1').name,
-                    data_dict.get('dim3').name,
-                    data_dict.get('dim3').data,
-                    data_dict.get('dim1').data[0],
-                    data_dict.get('dim1').data[1],
-                    data_dict.get('dim1').data[-2],
-                    data_dict.get('dim1').data[-1]))
-
-    print("parsed {0} values for {1}={2} ===> [{3}, {4}, ..., {5}, {6}]"
-          "".format(data_dict.get('dim2').name,
-                    data_dict.get('dim3').name,
-                    data_dict.get('dim3').data,
-                    data_dict.get('dim2').data[0],
-                    data_dict.get('dim2').data[1],
-                    data_dict.get('dim2').data[-2],
-                    data_dict.get('dim2').data[-1]))

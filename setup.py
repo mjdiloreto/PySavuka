@@ -16,6 +16,7 @@ requirements = [
     # TODO: put package requirements here
     'numpy',
     'matplotlib',
+    'colorama'
 ]
 
 test_requirements = [

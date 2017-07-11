@@ -67,6 +67,7 @@ class TestPysavuka(unittest.TestCase):
     def test_buffer(self):
         b = buffer.Buffer()
         self.assertEqual(b, {})
+        print(str(b))
 
         a = parse_funcs.parse(self.xyexample1, 'example')
         b1 = buffer.Buffer(a)
@@ -75,6 +76,8 @@ class TestPysavuka(unittest.TestCase):
         self.assertEqual(b1, b2)
         b3 = buffer.Buffer(b1, b2)
         self.assertEqual(b1, b3)
+
+        self.assertEqual(b3['dim1'], b2['dim1'])
 
     def debug_plot_funcs(self):
         import matplotlib.pyplot as plt
