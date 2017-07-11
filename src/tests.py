@@ -65,10 +65,6 @@ class TestPysavuka(unittest.TestCase):
         self.assertEqual(s1.attributes["xyexample1"], 0)
 
     def test_buffer(self):
-        b = buffer.Buffer()
-        self.assertEqual(b, {})
-        print(str(b))
-
         a = parse_funcs.parse(self.xyexample1, 'example')
         b1 = buffer.Buffer(a)
         b2 = buffer.Buffer(b1)
@@ -78,6 +74,17 @@ class TestPysavuka(unittest.TestCase):
         self.assertEqual(b1, b3)
 
         self.assertEqual(b3['dim1'], b2['dim1'])
+
+    def test_plotting(self):
+        from matplotlib import pyplot as plt
+        s = savuka.Savuka()
+        s.read(self.xyexample1, 'example')
+        s.read(self.xyexample2, 'example')
+        s.plot_buffers(0)
+        s.plot_buffers([0, 1])
+        s.plot_superimposed(0)
+        s.plot_superimposed([0, 1])
+        # plt.show() #DEBUG
 
     def debug_plot_funcs(self):
         import matplotlib.pyplot as plt
@@ -103,8 +110,11 @@ class TestPysavuka(unittest.TestCase):
         s.shift_buffer(1, 100)
         s.scale_buffer(2, 5)
         s.pow_buffer(3, 2)
-        # s.plot_superimposed([0,1,2,3,])
-        print(s)
+
+    def test_string_to_list(self):
+        self.assertEqual(utils.string_to_index_list('0'), [0])
+        self.assertEqual(utils.string_to_index_list('[1,2,3]'), [1, 2, 3])
+        self.assertEqual(utils.string_to_index_list('[0,1,3-5]'), [0, 1, 3, 4, 5])
 
     def debug_parse_funcs(self):
         s = savuka.Savuka()

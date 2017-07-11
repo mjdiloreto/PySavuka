@@ -127,6 +127,9 @@ class Savuka:
             bufs = (self.get_buffer(x) for x in range(buf_range[0],
                                                       buf_range[1] + 1))
             return bufs
+        elif isinstance(buf_range, list):
+            bufs = (self.get_buffer(x) for x in buf_range)
+            return bufs
         elif isinstance(buf_range, int):
             # we must be guaranteed to return a tuple so we can use * unpacking
             b = (self.get_buffer(buf_range),)
@@ -160,7 +163,10 @@ class Savuka:
         return buffer.get('dim3')
 
     def update_buffers(self, buffer_index, new_data, dim='dim2'):
-        self.data[buffer_index][dim] = new_data
+        if dim == 'dim2':
+            self.data[buffer_index].update_y(new_data)
+        elif dim == 'dim1':
+            self.data[buffer_index].update_x(new_data)
 
     def add_buffers(self, buffer_index1, buffer_index2, axis='y'):
         b1 = self.get_buffer(buffer_index1)
@@ -202,7 +208,9 @@ class Savuka:
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
     def pow_buffer(self, buffer_index, exp, dim='dim2'):
+        # TODO have an option to just show the new data, or to save it.
         buf = self.get_buffer(buffer_index).get_ys()
+
         new_buf = buf ** exp
 
         self.update_buffers(buffer_index, new_buf, dim=dim)

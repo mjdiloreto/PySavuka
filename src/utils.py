@@ -17,7 +17,11 @@ def floatify(s):
     try:
         return float(s)
     except ValueError:
-        return
+        try:
+            # for numbers like '1/3'
+            return float(eval(s))
+        except (ValueError, SyntaxError):
+            return
 
 
 def intify(s):
@@ -54,18 +58,17 @@ def parse_buffers(line):
 
 
 def string_to_numbers(s):
-    """Take the commandline line passed immediately after the command name
-    and return a tuple containing the list of arguments and a list of
-    options (anything preceded by -)"""
+    """Convert the string of space separated numbers into a list of numbers"""
     return [intify(x) or floatify(x) for x in re.split("\s", s)]
 
 
-def string_to_list(s):
-    """parse list syntax from "[1,2.4,3-6]" into [1, 2.4, 3, 4, 5, 6]"""
+def string_to_index_list(s):
+    """parse list syntax from "[1,2.4,3-6]" into [1, 2.4, 3, 4, 5, 6]
+    Good for getting indices of buffers from user."""
     b = []
 
     for x in re.split(",|\[|\]", s):
-        y = intify(x) or floatify(x) or rangeify(x)
+        y = rangeify(x) or intify(x)
         if isinstance(y, Iterable):
             for z in y:
                 b.append(z)
@@ -100,7 +103,12 @@ def eval_string_list(l):
     return a
 
 
-def parseline(line, command):
+def parseline(line):
+    """return a generator of all the arguments"""
+    return tuple(arg for arg in re.split("\s", line))
+
+
+def parseline2(line, command):
     """for the given line, associate parameters to the corresponding
     options, defaulting the name of the command.
     e.g. parseline('a b -i c', 'command') should return
@@ -138,15 +146,16 @@ def check_input(exceptions_and_params={}):
 
     def decorator(f):
 
+        # TODO don't force user to input new param. let them quit
         # wraps the function whose input will be checked.
-        def wrapper(self, *args, **kwargs):
+        def wrapper(*args, **kwargs):
             try:
-                f(self, *args, **kwargs)
+                f(*args, **kwargs)
             except Exception as e:
-                rerun(self, e, *args, **kwargs)
+                rerun(e, *args, **kwargs)
 
         # get new params based on exception and rerun f until it doesn't break.
-        def rerun(self, e, *args, **kwargs):
+        def rerun(e, *args, **kwargs):
             try:
                 # Which parameter resulted in the exception?
                 param = exceptions_and_params[e.__class__]
@@ -163,6 +172,7 @@ def check_input(exceptions_and_params={}):
                                       "".format(arg, e.__class__, e))
             # If param isn't in kwargs it must be an integer
             except KeyError:
+                print(args)
                 arg = args[param]
 
                 # we need to call the function again with new params
@@ -174,7 +184,7 @@ def check_input(exceptions_and_params={}):
                 # args is always a tuple.
                 args = tuple(temp_list)
 
-            wrapper(self, *args, **kwargs)
+            wrapper(*args, **kwargs)
 
         return wrapper
 

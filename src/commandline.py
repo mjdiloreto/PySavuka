@@ -79,17 +79,23 @@ class CommandLine(cmd.Cmd):
     @plot_funcs.show_after_completion
     def do_plot(self, line):
         """usage: plot |
-            plot (start, end) (start, end) ...
+            plot <python style list with no spaces, eg [1,2,3]>
 
             OPTIONS:
-            -s      superimpose the plots from this point forward.
+            -s      superimpose the plots
 
             plots the buffers specified by the given ranges (either integers
             or python tuples)."""
-        if line is "":
+        args = re.split("\s", line)
+        if line is '':
             # default behavior is to plot everything in separate windows.
             self.savuka.plot_buffers(range(len(self.savuka)))
+        elif '-s' in args:
+            self.savuka.plot_superimposed(utils.string_to_index_list(args[0]))
         else:
+            self.savuka.plot_buffers(utils.string_to_index_list(args[0]))
+            print(utils.string_to_index_list(args[0]))
+        '''else:
             # spaces not preceded by commas are used to break up arguments.
             # '(0, 1)' should be represented as '(0, 1)' not '(0,' and '1)'
             for idx, x in enumerate(re.split("(?<!,)\s", line)):
@@ -106,7 +112,7 @@ class CommandLine(cmd.Cmd):
                                                                line)[idx+1:])
                         break
                     else:
-                        self.default("{0}\n{1}".format(x, e))
+                        self.default("{0}\n{1}".format(x, e))'''
 
     def do_svd(self, line):
         """usage: svd [file path] [# of spectra]
@@ -141,12 +147,27 @@ class CommandLine(cmd.Cmd):
             print(self.savuka)
             # Todo make line params specify buffer indices and names to print
 
-    def do_add(self, line):
+    @utils.check_input(exceptions_and_params={})
+    def do_shift(self, line):
         """Add two buffers along the desired """
-        pass
+        args = utils.parseline(line)
+        self.savuka.shift_buffer(utils.intify(args[0]),
+                                 utils.floatify(args[1]))
 
-    def do_skeleton(self, line):
-        print(utils.string_to_list(line))
+    @utils.check_input(exceptions_and_params={})
+    def do_scale(self, line):
+        args = utils.parseline(line)
+        self.savuka.scale_buffer(utils.intify(args[0]),
+                                 utils.floatify(args[1]))
+
+    @utils.check_input(exceptions_and_params={})
+    def do_pow(self, line):
+        args = utils.parseline(line)
+        self.savuka.pow_buffer(utils.intify(args[0]),
+                               utils.floatify(args[1]))
+
+    def do_check(self, line):
+        pass
 
 
 def main():

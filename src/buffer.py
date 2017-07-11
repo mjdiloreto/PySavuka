@@ -10,7 +10,22 @@ import numpy as np
 # This structure is used in each dictionary returned by these parse_funcs
 # as the values to the keys named 'dim1','dim2',etc.
 # new Dimension instances are made via: Dimension([...],'name')
-Dimension = namedtuple('Dimension', ['data', 'name'])
+# Dimension = namedtuple('Dimension', ['data', 'name'])
+
+
+class Dimension(object):
+    def __repr__(self):
+        return "(" + self.name + ", " + str(self.data) + ")\n"
+
+    def __init__(self, data=None, name=None):
+        self.data = data if data is not None else np.asarray([])
+        self.name = name if name is not None else ''
+
+    def update(self, new_data):
+        if isinstance(new_data, np.ndarray):
+            self.data = new_data
+        elif isinstance(new_data, str):
+            self.name = new_data
 
 
 class Buffer(dict):
@@ -112,10 +127,15 @@ class Buffer(dict):
         elif isinstance(data, int):
             self['dim2'].data += data
 
+    def update_y(self, new_data):
+        self['dim2'].update(new_data)
+
+    def update_x(self, new_data):
+        self['dim1'].update(new_data)
+
 
 if __name__ == '__main__':
-    b = Buffer()
-    print(b.__repr__())
-    b['a'] = 'b'
-    b1 = Buffer(b)
-    print(b1.__repr__())
+    d = Dimension()
+    print(d)
+    d1 = Dimension(np.asarray([1,2,3]), 'doggy')
+    print(d1)

@@ -59,7 +59,15 @@ def plot_buffers(*args):
         plot_buffer(arg)
 
 
-def plot_superimposed(sav, buf_list):
+def plot_superimposed(*args):
+    """plots any number of Buffer objects on the same graph."""
+    xs = [buf.get_xs() for buf in args]
+    ys = [buf.get_ys() for buf in args]
+    vals = [val for x in zip(xs, ys) for val in x]
+    plt.plot(*vals)
+
+
+def plot_superimposed1(sav, buf_list):
     # Figure number unique to this function. Only one superimposed plot at once.
     plt.figure(999)
 

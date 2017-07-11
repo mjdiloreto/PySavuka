@@ -16,7 +16,7 @@ requirements = [
     # TODO: put package requirements here
     'numpy',
     'matplotlib',
-    'colorama'
+    # 'scipy' - for cubic spline interpolation
 ]
 
 test_requirements = [
