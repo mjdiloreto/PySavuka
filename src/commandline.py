@@ -9,6 +9,7 @@ from src import svd
 import cmd
 import re
 import os
+import sys
 
 from sys import stderr, stdout
 from time import sleep
@@ -40,7 +41,7 @@ class CommandLine(cmd.Cmd):
     def do_quit(self, line):
         """Exit savuka"""
         print("Exit")
-        return True
+        sys.exit()
 
     def do_help(self, arg):
         """Print help text in red. Kind of a hack since stderr is always red."""
