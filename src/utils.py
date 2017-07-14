@@ -1,6 +1,3 @@
-import tkinter as tk
-import itertools
-from tkinter import filedialog
 import re
 import sys
 
@@ -15,14 +12,6 @@ def ask_for_files():
     files, _ = QFileDialog.getOpenFileNames(QWidget(), "Select data files",
                                             "", "All Files (*)")
     return files
-
-
-def get_filenames():
-    """Prompt the user in a GUI for one or more file names."""
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilenames()
-    return file_path
 
 
 def floatify(s):
@@ -89,14 +78,6 @@ def string_to_index_list(s):
             if y is not None:
                 b.append(y)
     return b
-
-
-def get_filename():
-    """Prompt the user in a GUI for a single file name."""
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename()
-    return file_path
 
 
 def eval_string(string):
