@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 
 from codecs import open
-from os import path
+from os import path, system
 from setuptools import setup, find_packages
 
 from sys import platform, stdout
@@ -66,6 +66,11 @@ setup(
 )
 
 if platform == 'win32':
+    try:
+        import tkinter
+    except ImportError:
+        system("pip3 install tkinter")
+
     from os import fdopen
     s = stdout  # remember current stdout
 
@@ -77,3 +82,6 @@ if platform == 'win32':
 
     # set it back to original
     stdout = s
+
+else:
+    system("sudo apt install python3-tk")
