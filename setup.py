@@ -6,21 +6,31 @@ from codecs import open
 from os import path
 from setuptools import setup, find_packages
 
+from sys import platform, stdout
+
 
 here = path.abspath(path.dirname(__file__))
 
 with open(path.join(here, 'README.rst'), encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-requirements = [
-    # TODO: put package requirements here
+unix_requirements = [  # should work for mac and linux
     'numpy',
     'matplotlib',
-    # 'scipy' - for cubic spline interpolation
+    'scipy',
+    'PyQt5',
 ]
 
+win32_requirements = [
+    'numpy',
+    'matplotlib',
+    'PyQt5',
+    # 'scipy'  # -need to install wheel from Christopher Gohlke's website
+]
+
+requirements = win32_requirements if platform == 'win32' else unix_requirements
+
 test_requirements = [
-    # TODO: put package test requirements here
     'unittest',
 ]
 
@@ -54,3 +64,16 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
 )
+
+if platform == 'win32':
+    from os import fdopen
+    s = stdout  # remember current stdout
+
+    # Needed for unbuffered I/O
+    unbuffered = fdopen(stdout.fileno(), 'w', 0)
+    stdout = unbuffered
+
+    stdout.write("Im in windows")
+
+    # set it back to original
+    stdout = s

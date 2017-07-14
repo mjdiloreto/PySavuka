@@ -2,12 +2,25 @@ import tkinter as tk
 import itertools
 from tkinter import filedialog
 import re
+import sys
 
 from collections import Iterable
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
+
+
+def ask_for_files():
+    # TODO Should I close these applications?
+    app = QApplication(sys.argv)
+
+    files, _ = QFileDialog.getOpenFileNames(QWidget(), "Select data files",
+                                            "", "All Files (*)")
+    return files
 
 
 def get_filenames():
     """Prompt the user in a GUI for one or more file names."""
+    root = tk.Tk()
+    root.withdraw()
     file_path = filedialog.askopenfilenames()
     return file_path
 
