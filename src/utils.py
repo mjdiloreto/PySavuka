@@ -1,14 +1,14 @@
 import tkinter as tk
-import itertools
-from tkinter import filedialog
+from tkinter.filedialog import askopenfilenames
 import re
-
-from collections import Iterable
 
 
 def get_filenames():
     """Prompt the user in a GUI for one or more file names."""
-    file_path = filedialog.askopenfilenames()
+    root = tk.Tk()
+    root.withdraw()
+    file_path = askopenfilenames()
+    root.destroy()
     return file_path
 
 
@@ -18,7 +18,7 @@ def floatify(s):
         return float(s)
     except ValueError:
         try:
-            # for numbers like '1/3'
+            # for numbers like '1/3', they first have to be evaluated
             return float(eval(s))
         except (ValueError, SyntaxError):
             return
@@ -63,18 +63,16 @@ def string_to_numbers(s):
 
 
 def string_to_index_list(s):
-    """parse list syntax from "[1,2.4,3-6]" into [1, 2.4, 3, 4, 5, 6]
-    Good for getting indices of buffers from user."""
+    """parse list syntax from "[1,2.4,3-6]" into [1, 3, 4, 5, 6]
+    Good for getting indices of buffers from user. Notice no floats."""
     b = []
 
     for x in re.split(",|\[|\]", s):
-        y = rangeify(x) or intify(x)
-        if isinstance(y, Iterable):
-            for z in y:
-                b.append(z)
-        else:
-            if y is not None:
-                b.append(y)
+        if rangeify(x):
+            b.extend(rangeify(x))
+        elif intify(x):
+            b.append(intify(x))
+
     return b
 
 

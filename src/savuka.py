@@ -53,12 +53,15 @@ class Savuka:
 
     def __repr__(self):
         # representation of the data. Called with built-in print function
-        r = ""
+        r = []
         for i, buf in enumerate(self.data):
             # TODO, print the attributes as {0}, if present. or organize by
             # TODO attribute
-            r += "buffer {0}: {1},\n\n".format(i, buf)
-        return "\n[" + r[:-2] + "\n]\n"
+            r.append("buffer {0}: {1},\n\n".format(i, buf))
+
+        # make the list a string following Google python style guidelines.
+        rep = "".join(r[:-2])
+        return "\n[" + rep + "\n]\n"
 
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified
@@ -140,7 +143,7 @@ class Savuka:
 
         buffer = self.data[idx]
         return buffer.get_xs(start, end)
-    ''' allxs = buffer.get('dim1').data
+    ''' allxs = buffer.get('dim0').data
     if end == 0:
         return allxs
     else:
@@ -150,7 +153,7 @@ class Savuka:
         """returns the y values within the range of the given buffer. Each
         buffer has the form [[z],[x],[y]]"""
         buffer = self.data[idx]
-        allys = buffer.get('dim2').data
+        allys = buffer.get('dim1').data
         if end == 0:
             return allys
         else:
@@ -160,12 +163,12 @@ class Savuka:
         # TODO what about 4+ dimension data?
         """return the zingle z value for the buffer."""
         buffer = self.data[idx]
-        return buffer.get('dim3')
+        return buffer.get('dim2')
 
-    def update_buffers(self, buffer_index, new_data, dim='dim2'):
-        if dim == 'dim2':
+    def update_buffers(self, buffer_index, new_data, dim='dim1'):
+        if dim == 'dim1':
             self.data[buffer_index].update_y(new_data)
-        elif dim == 'dim1':
+        elif dim == 'dim0':
             self.data[buffer_index].update_x(new_data)
 
     def add_buffers(self, buffer_index1, buffer_index2, axis='y'):
@@ -193,7 +196,7 @@ class Savuka:
 
         self.update_buffers(buffer_index2, new_y)
 
-    def shift_buffer(self, buffer_index, delta, dim='dim2'):
+    def shift_buffer(self, buffer_index, delta, dim='dim1'):
         buf = self.get_buffer(buffer_index).get_ys()
 
         # numpy adds delta to each elt in an array by default.
@@ -201,13 +204,13 @@ class Savuka:
 
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
-    def scale_buffer(self, buffer_index, sigma, dim='dim2'):
+    def scale_buffer(self, buffer_index, sigma, dim='dim1'):
         buf = self.get_buffer(buffer_index).get_ys()
         new_buf = buf * sigma
 
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
-    def pow_buffer(self, buffer_index, exp, dim='dim2'):
+    def pow_buffer(self, buffer_index, exp, dim='dim1'):
         # TODO have an option to just show the new data, or to save it.
         buf = self.get_buffer(buffer_index).get_ys()
 
@@ -221,3 +224,20 @@ class Savuka:
     def plot_superimposed(self, buf_range):
         return plot_funcs.plot_superimposed(*self.get_buffers(buf_range))
 
+    def format_load(self, file_, data_start, data_names, extra_dimensions, uses_tabs):
+        """load in the data from the given file in a generic way defined by the
+        user interactively."""
+
+        # parse the file according to the formstyle specified by the user
+        data_dict = parse_funcs.parse_user_defined(file_, data_start,
+                                                   data_names, extra_dimensions)
+
+        # The hash value of the buffer must be unique, so this simple algorithm
+        # ensures that no buffer in self will have hash collisions with others.
+        data_dict['hash'] = len(self) + 1
+
+        # add the parsed data to the list
+        self.data.append(data_dict)
+
+        # show the user the x and y values they parsed in
+        print("\nSavuka read in the following data:\n" + str(data_dict))

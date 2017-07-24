@@ -19,10 +19,6 @@ requirements = [
     # 'scipy' - for cubic spline interpolation
 ]
 
-test_requirements = [
-    # TODO: put package test requirements here
-    'unittest',
-]
 
 setup(
     name='pysavuka',
@@ -52,5 +48,4 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    tests_require=test_requirements,
 )

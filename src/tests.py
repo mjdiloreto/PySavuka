@@ -30,11 +30,11 @@ class TestPysavuka(unittest.TestCase):
 
         # test that the function outputs the correct values for x and y
         b = parse_funcs.parse(self.xyexample1, "example")
-        self.assertEqual(b['dim1'].data[0], 0.0)
-        self.assertEqual(b['dim2'].data[0], 0.9811704)
-        self.assertEqual(b['dim1'].data[2], 0.3265306)
-        self.assertEqual(b['dim2'].data[2], 1.005850)
-        self.assertEqual(b['dim3'].data, 1.0)
+        self.assertEqual(b['dim0'].data[0], 0.0)
+        self.assertEqual(b['dim1'].data[0], 0.9811704)
+        self.assertEqual(b['dim0'].data[2], 0.3265306)
+        self.assertEqual(b['dim1'].data[2], 1.005850)
+        self.assertEqual(b['dim2'].data, 1.0)
 
         # Checks that testing an unsupported format raises an error
         with self.assertRaises(NameError):
@@ -73,7 +73,7 @@ class TestPysavuka(unittest.TestCase):
         b3 = buffer.Buffer(b1, b2)
         self.assertEqual(b1, b3)
 
-        self.assertEqual(b3['dim1'], b2['dim1'])
+        self.assertEqual(b3['dim0'], b2['dim0'])
 
     def test_plotting(self):
         from matplotlib import pyplot as plt

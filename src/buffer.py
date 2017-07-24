@@ -8,7 +8,7 @@ import numpy as np
 # experiment, and another called 'time' with the x data.
 
 # This structure is used in each dictionary returned by these parse_funcs
-# as the values to the keys named 'dim1','dim2',etc.
+# as the values to the keys named 'dim0','dim1',etc.
 # new Dimension instances are made via: Dimension([...],'name')
 # Dimension = namedtuple('Dimension', ['data', 'name'])
 
@@ -21,11 +21,17 @@ class Dimension(object):
         self.data = data if data is not None else np.asarray([])
         self.name = name if name is not None else ''
 
-    def update(self, new_data):
-        if isinstance(new_data, np.ndarray):
-            self.data = new_data
-        elif isinstance(new_data, str):
-            self.name = new_data
+    def set_data(self, new_data):
+        self.data = np.asarray(new_data)
+
+    def set_name(self, new_name):
+        self.name = str(new_name)
+
+    def append(self, val):
+        # TODO maybe have Dimension inherit from list and have an as_nparray
+        # TODO method
+        # val must be in list because that's how numpy appends.
+        self.data = np.append(self.data, [val])
 
 
 class Buffer(dict):
@@ -34,26 +40,33 @@ class Buffer(dict):
         """String representation of Buffer. Show first two and last two
         values of each dataset, or, if not a dataset, show the key, value
         pairs as in a regular dictionary."""
-        s = ""
+        s = []
 
         for key, value in self.items():
             if isinstance(value, Dimension):
                 # x and y should be arrays
                 if isinstance(value.data, np.ndarray):
                     try:
-                        s += "{0}: [{1}, {2}, . . . , {3}, {4}],\n"\
-                             "".format(value.name, value.data[0], value.data[1],
-                                       value.data[-2], value.data[-1])
+                        s.append("{0}: [{1}, {2}, . . . , {3}, {4}],\n"
+                                 "".format(value.name,
+                                           value.data[0],
+                                           value.data[1],
+                                           value.data[-2],
+                                           value.data[-1])
+                                 )
                     except IndexError:
-                        s += "{0}: {1},\n".format(value.name, value.data)
+                        s.append("{0}: {1},\n".format(value.name, value.data))
                 # z1, z2, zn should be single values, if present.
                 else:
-                    s += "{0}: {1},\n".format(value.name, value.data)
+                    s.append("{0}: {1},\n".format(value.name, value.data))
             else:
-                s += "{0}: {1}, ".format(key, value)
+                s.append("{0}: {1}, ".format(key, value))
 
+        # make the list a string,
         # strip the final space and comma. Aesthetics only.
-        return "{" + s[:-2] + "}"
+        string = "".join(s[:-2])
+
+        return "{" + string + "}"
 
     def __init__(self, *args, **kwargs):
         super(Buffer)
@@ -67,19 +80,19 @@ class Buffer(dict):
             self[k] = v
 
         # minimum requirement is that there are x and y values
+        if 'dim0' not in self:
+            self['dim0'] = Dimension(np.asarray([]), 'default')
         if 'dim1' not in self:
             self['dim1'] = Dimension(np.asarray([]), 'default')
-        if 'dim2' not in self:
-            self['dim2'] = Dimension(np.asarray([]), 'default')
 
         # many calculations assume data are numpy arrays
-        assert isinstance(self['dim1'].data, np.ndarray) \
-            and isinstance(self['dim2'].data, np.ndarray), \
+        assert isinstance(self['dim0'].data, np.ndarray) \
+            and isinstance(self['dim1'].data, np.ndarray), \
             "first two dimensions in a Buffer must be numpy arrays."
 
     def get_xs(self, start=0, end=0):
         """returns the x values within the range of the given buffer."""
-        allxs = self['dim1'].data
+        allxs = self['dim0'].data
         if start == 0 and end == 0:
             return allxs
         else:
@@ -91,10 +104,10 @@ class Buffer(dict):
         """returns the user associated name for the x dimension of their
         data. This is defined in the parse_funcs function that creates
         the Buffer object."""
-        return self['dim1'].name
+        return self['dim0'].name
 
     def get_ys(self, start=0, end=0):
-        allys = self['dim2'].data
+        allys = self['dim1'].data
         if start == 0 and end == 0:
             return allys
         else:
@@ -103,12 +116,23 @@ class Buffer(dict):
             return allys[start:end]
 
     def get_y_name(self):
-        return self['dim2'].name
+        return self['dim1'].name
 
     def add_to_x(self, data, interpolate=False):
-        current_x = self['dim1'].data
+        current_x = self['dim0'].data
         if isinstance(data, np.ndarray):
             if current_x.shape == data.shape:
+                self['dim0'].data += data
+            elif interpolate:
+                print("using cubic spline interpolation on data")
+                # TODO cubic spline interpolation
+        elif isinstance(data, int):
+            self['dim0'].data += data
+
+    def add_to_y(self, data, interpolate=False):
+        current_y = self['dim1'].data
+        if isinstance(data, np.ndarray):
+            if current_y.shape == data.shape:
                 self['dim1'].data += data
             elif interpolate:
                 print("using cubic spline interpolation on data")
@@ -116,22 +140,11 @@ class Buffer(dict):
         elif isinstance(data, int):
             self['dim1'].data += data
 
-    def add_to_y(self, data, interpolate=False):
-        current_y = self['dim2'].data
-        if isinstance(data, np.ndarray):
-            if current_y.shape == data.shape:
-                self['dim2'].data += data
-            elif interpolate:
-                print("using cubic spline interpolation on data")
-                # TODO cubic spline interpolation
-        elif isinstance(data, int):
-            self['dim2'].data += data
-
     def update_y(self, new_data):
-        self['dim2'].update(new_data)
+        self['dim1'].update(new_data)
 
     def update_x(self, new_data):
-        self['dim1'].update(new_data)
+        self['dim0'].update(new_data)
 
 
 if __name__ == '__main__':

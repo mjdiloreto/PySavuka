@@ -9,18 +9,20 @@ from src import svd
 import cmd
 import re
 import os
+import json
 
 from sys import stderr, stdout
 from time import sleep
+
 
 # don't change the location of any files in this package.
 library_root = os.path.abspath(os.path.join(__file__, "..\.."))
 
 formats_path = os.path.join(library_root, r'docs\supported_formats.txt')
 
-FORMATS = open(formats_path).read()
+json_path = os.path.join(library_root, r'docs\formats.json')
 
-# TODO change tuple command to use int-int syntax and convert that to tuple
+FORMATS = open(formats_path).read()
 
 
 class CommandLine(cmd.Cmd):
@@ -46,12 +48,11 @@ class CommandLine(cmd.Cmd):
         cmd.Cmd.do_help(self, arg)
         self.stdout = stdout
 
-    # TODO add command to show data in savuka
-
     def default(self, line):
         print("This command is unsupported: {0}".format(line))
 
     def do_read(self, line):
+        # TODO "would you like to use a predefined file format? [y/n]:"
         """usage: read
            user will be prompted to select file(s) and asked about the
            format of those files, as specified by supported_formats.txt
@@ -77,6 +78,7 @@ class CommandLine(cmd.Cmd):
                 return self.read_help(filepaths, newformstyle)
 
     @plot_funcs.show_after_completion
+    @utils.check_input(exceptions_and_params={})
     def do_plot(self, line):
         """usage: plot |
             plot <python style list with no spaces, eg [1,2,3]>
@@ -121,6 +123,7 @@ class CommandLine(cmd.Cmd):
         return svd.svd()
 
     def do_load(self, line):
+        # TODO make the precmd method split line into args and pass to commands
         """usage: load [file path] [format type]
             format type will be the name of the instrument
             used to collect the data. /docs/supported_formats.txt
@@ -169,6 +172,52 @@ class CommandLine(cmd.Cmd):
     def do_check(self, line):
         pass
 
+    def do_formatload(self, line):
+        """Dumbest method of formatting. Won't assume anything about data,
+        but will ask the user everything and save the answers in
+        formats.txt"""
+        files = utils.get_filename()
+        cols = utils.intify(input("How many columns?: "))
+        data_start = utils.intify(input("What line does data "
+                            "start on (starting from 0)?: "))
+        data_names = []
+        for x in range(cols):
+            data_names.append("What is the name of column {0}?: ".format(x))
+
+        num_extra_dimensions = utils.intify(input("How many other dimensions "
+                                              "are there?: "))
+        extra_dimensions = {}
+        for x in range(num_extra_dimensions):
+            v = utils.intify(input("What line contains the data "
+                      "from extra dimension {0}?: ".format(x)))
+            k = input("What is the name of that dimension?: ")
+            extra_dimensions[k] = v
+
+        # Questions with yes or no answers
+        confirmations = ["y", "Y", "yes", "Yes", "YES"]
+
+        uses_tabs = input("Does the file use tabs to separate columns? [y/n]: ")
+        # convert the answer into a boolean
+        uses_tabs = True if uses_tabs in confirmations else False
+
+        save_state = input("Would you like to save this as a permanent file"
+                           "format? [y/n]: ")
+        if save_state in confirmations:  # Save the data in formats.json
+            name = input("What would you like to name the format?: ")
+            print("saving choices as format {0} ... ".format(name))
+            with open(json_path, 'w') as formats_file:
+                json.dump({
+                    "name": name,
+                    "uses_tabs": uses_tabs,
+                    "data_start": data_start,
+                    "data_names": data_names,  # reveals number of columns
+                    "extra_dimensions": extra_dimensions
+                }, formats_file, ensure_ascii=False)
+
+        for file_ in files:
+            self.savuka.formatload(file_, data_start, data_names,
+                                   extra_dimensions, uses_tabs)
+
 
 def main():
     CommandLine().cmdloop()
@@ -176,6 +225,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #c = CommandLine()
-    #c.check(None, a=None)
-
