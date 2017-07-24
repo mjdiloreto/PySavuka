@@ -9,16 +9,17 @@ from src import svd
 import cmd
 import re
 import os
+
 import json
+import sys
 
 from sys import stderr, stdout
 from time import sleep
 
-
 # don't change the location of any files in this package.
-library_root = os.path.abspath(os.path.join(__file__, "..\.."))
+library_root = os.path.abspath(os.path.join(__file__, "../.."))
 
-formats_path = os.path.join(library_root, r'docs\supported_formats.txt')
+formats_path = os.path.join(library_root, r'docs/supported_formats.txt')
 
 json_path = os.path.join(library_root, r'docs\formats.json')
 
@@ -40,7 +41,7 @@ class CommandLine(cmd.Cmd):
     def do_quit(self, line):
         """Exit savuka"""
         print("Exit")
-        return True
+        sys.exit()
 
     def do_help(self, arg):
         """Print help text in red. Kind of a hack since stderr is always red."""
@@ -57,7 +58,7 @@ class CommandLine(cmd.Cmd):
            user will be prompted to select file(s) and asked about the
            format of those files, as specified by supported_formats.txt
            in the docs folder of this project."""
-        filepaths = utils.get_filenames()
+        filepaths = utils.ask_for_files()
         if filepaths is not "":
             formstyle = input("\nFormat of the file(s): ")
             return self.read_help(filepaths, formstyle)
@@ -154,29 +155,26 @@ class CommandLine(cmd.Cmd):
     def do_shift(self, line):
         """Add two buffers along the desired """
         args = utils.parseline(line)
-        self.savuka.shift_buffer(utils.intify(args[0]),
-                                 utils.floatify(args[1]))
+        self.savuka.shift_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     @utils.check_input(exceptions_and_params={})
     def do_scale(self, line):
         args = utils.parseline(line)
-        self.savuka.scale_buffer(utils.intify(args[0]),
-                                 utils.floatify(args[1]))
+        self.savuka.scale_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     @utils.check_input(exceptions_and_params={})
     def do_pow(self, line):
         args = utils.parseline(line)
-        self.savuka.pow_buffer(utils.intify(args[0]),
-                               utils.floatify(args[1]))
+        self.savuka.pow_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     def do_check(self, line):
-        pass
+        utils.save_file_dialog()
 
     def do_formatload(self, line):
         """Dumbest method of formatting. Won't assume anything about data,
         but will ask the user everything and save the answers in
         formats.txt"""
-        files = utils.get_filename()
+        files = utils.ask_for_files()
         cols = utils.intify(input("How many columns?: "))
         data_start = utils.intify(input("What line does data "
                             "start on (starting from 0)?: "))

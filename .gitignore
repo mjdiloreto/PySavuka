@@ -59,12 +59,14 @@ docs/_build/
 # PyBuilder
 target/
 
-#Ipython Notebook
+# Ipython Notebook
 .ipynb_checkpoints
 
-#PyCharm folders
+# PyCharm folders
 .idea
 
-#Things I'm working on
+# Things I'm working on
 dimension.py
 
+# virtual environments
+venv/

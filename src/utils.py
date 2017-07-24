@@ -1,15 +1,17 @@
-import tkinter as tk
-from tkinter.filedialog import askopenfilenames
 import re
+import sys
+
+from collections import Iterable
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
 
-def get_filenames():
-    """Prompt the user in a GUI for one or more file names."""
-    root = tk.Tk()
-    root.withdraw()
-    file_path = askopenfilenames()
-    root.destroy()
-    return file_path
+def ask_for_files():
+    # TODO Should I close these applications?
+    app = QApplication(sys.argv)
+
+    files, _ = QFileDialog.getOpenFileNames(QWidget(), "Select data files",
+                                            "", "All Files (*)")
+    return files
 
 
 def floatify(s):
@@ -74,14 +76,6 @@ def string_to_index_list(s):
             b.append(intify(x))
 
     return b
-
-
-def get_filename():
-    """Prompt the user in a GUI for a single file name."""
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename()
-    return file_path
 
 
 def eval_string(string):
