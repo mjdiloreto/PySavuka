@@ -15,6 +15,15 @@ def ask_for_files():
     return files
 
 
+def find_number_on_line(line):
+    """return the first occurrence of a decimal number in a string.
+    Works for scientific notation as well.
+    e.g. 'This is the line and the value is 1.00E-9'
+    will be converted to the floating-point number 1.00E-9"""
+    matches = re.findall(line, r'[0-9]+\.[0-9]+((e|E)(\+|\-)[0-9]+)?')
+    return floatify(matches[0])
+
+
 def load_formats_from_json(file_):
     with open(file_, 'r') as f:
         data = json.load(f)

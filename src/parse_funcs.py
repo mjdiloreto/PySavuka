@@ -17,7 +17,7 @@ There is no limit to the amount of metadata that can be stored in the
 dictionary, because specific routines will only require certain fields like
 dim0, dim1, etc."""
 from src import buffer
-from src.utils import floatify, intify, load_formats_from_json
+from src import utils
 
 import re
 import os
@@ -37,11 +37,22 @@ def parse(filepath, formstyle):
     formstyle specified. Ideally styles and functions should be named after
     the lab instrument that produce them."""
 
-    print(load_formats_from_json(json_path))
+    defined_formats = utils.load_formats_from_json(json_path)
+    if formstyle in defined_formats:
+        # dict of user-specified descriptions of the format.
+        parameters = defined_formats[formstyle]
 
-    # evaluate the function of the associated formating style.
-    # this can raise a NameError if the formstyle is undefined.
-    buf = eval("parse_" + formstyle + "(filepath)")
+        # parse the file using user-specified parameters
+        buf = parse_user_defined(filepath,
+                                 parameters['data_start'],
+                                 parameters['data_names'],
+                                 parameters['extra_dimensions'],
+                                 parameters['delimiter']
+                                 )
+    else:
+        # evaluate the function of the associated formating style.
+        # this can raise a NameError if the formstyle is undefined.
+        buf = eval("parse_" + formstyle + "(filepath)")
 
     assert isinstance(buf, buffer.Buffer), (
         "The parsing function for type {0} does not return a instance of a "
@@ -84,15 +95,14 @@ def parse_user_defined(file_, data_start, data_names, extra_dimensions, delimite
     for name, line_number in extra_dimensions.items():
         # get the value from the line specified from the user
         # (either first or second value on the line)
-        dimension_data = (floatify(split_lines[line_number][0])
-                          or floatify(split_lines[line_number][1]))
+        dim_value = utils.find_number_on_line("".join(split_lines[line_number]))
         # add the value to our data object
-        data['dim{0}'.format(len(data))] = buffer.Dimension(dimension_data, name)
+        data['dim{0}'.format(len(data))] = buffer.Dimension(dim_value, name)
 
     for line in split_lines[data_start:]:  # from the first line of data onward
         for x in range(len(data_names)):  # for each column
             # add the value to the correct Dimension object
-            data['dim{0}'.format(x)].append(floatify(line[x]))
+            data['dim{0}'.format(x)].append(utils.floatify(line[x]))
 
     return buffer.Buffer(data)
 
@@ -116,14 +126,14 @@ def parse_example(files):
         # something, even if it's just ''
         # This assumes that the first number encountered at the beginning of
         # a line is in fact an x value.
-        xs = [floatify(line[0]) for line in split_lines
-              if floatify(line[0]) is not None]
+        xs = [utils.floatify(line[0]) for line in split_lines
+              if utils.floatify(line[0]) is not None]
         xs = np.asarray(xs)
 
         # We slice d according to the length of xs because that's where the data
         # begins. This assumes for every x value there is a y. Also don't need
         # to check for None since there shouldn't be any after all the data.
-        ys = [floatify(line[1]) for line in split_lines[-len(xs):]]
+        ys = [utils.floatify(line[1]) for line in split_lines[-len(xs):]]
         ys = np.asarray(ys)
 
         assert len(xs) == len(ys), ("The data couldn't be parsed to match x "
@@ -147,7 +157,7 @@ def parse_example(files):
         data_dict = buffer.Buffer({'dim0': buffer.Dimension(xs, 'x'),
                      'dim1': buffer.Dimension(ys, 'y'),
                      # findall returns a list
-                     'dim2': buffer.Dimension(floatify(dim2[0]), dim2_name[0]),
+                     'dim2': buffer.Dimension(utils.floatify(dim2[0]), dim2_name[0]),
                      'file': files,
                      'format': 'example'})
 
@@ -160,10 +170,10 @@ def parse_applied_photophysics(files):
         split_lines = [re.split(',', line) for line in f]
         f.close()
 
-        xs = np.asarray([floatify(line[0]) for line in split_lines
-                         if floatify(line[0]) is not None])
+        xs = np.asarray([utils.floatify(line[0]) for line in split_lines
+                         if utils.floatify(line[0]) is not None])
 
-        ys = np.asarray([floatify(line[1]) for line in split_lines[-len(xs):]])
+        ys = np.asarray([utils.floatify(line[1]) for line in split_lines[-len(xs):]])
 
         assert len(xs) == len(ys), ("The data couldn't be parsed to match x "
                                     "and y values. This is probably caused by "
@@ -211,13 +221,13 @@ def parse_cd(file_):
         data["dim{0}".format(column_number)] = buffer.Dimension()
 
     for line in split_lines:
-        x_val = floatify(line[0])
+        x_val = utils.floatify(line[0])
         if x_val:  # when data is encountered
             for idx, val in enumerate(line):  # for each column
                 # convert the data and put it in the correct list
-                data["dim{0}".format(idx)].append(floatify(val))
+                data["dim{0}".format(idx)].append(utils.floatify(val))
         else:  # if not data, then some kind of metadata, save it's value.
-            data[line[0]] = floatify(line[1]) or line[1]
+            data[line[0]] = utils.floatify(line[1]) or line[1]
 
     # TODO associate X_UNITS, Y_UNITS
     buf = buffer.Buffer(data)
