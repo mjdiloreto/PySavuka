@@ -9,8 +9,6 @@ from src import svd
 import cmd
 import re
 import os
-
-import json
 import sys
 
 from sys import stderr, stdout
@@ -168,7 +166,11 @@ class CommandLine(cmd.Cmd):
         self.savuka.pow_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     def do_check(self, line):
-        utils.save_file_dialog()
+        if '\t' in line:
+            print('y')
+        else:
+            print('n')
+
 
     def do_formatload(self, line):
         """Dumbest method of formatting. Won't assume anything about data,
@@ -180,41 +182,45 @@ class CommandLine(cmd.Cmd):
                             "start on (starting from 0)?: "))
         data_names = []
         for x in range(cols):
-            data_names.append("What is the name of column {0}?: ".format(x))
+            data_names.append(input("What is the name of column "
+                                    "{0}?: ".format(x)))
 
         num_extra_dimensions = utils.intify(input("How many other dimensions "
                                               "are there?: "))
         extra_dimensions = {}
         for x in range(num_extra_dimensions):
-            v = utils.intify(input("What line contains the data "
-                      "from extra dimension {0}?: ".format(x)))
+            v = utils.intify(input("What line contains the data from extra "
+                    "dimension {0}? (starting from 0): ".format(x)))
             k = input("What is the name of that dimension?: ")
             extra_dimensions[k] = v
 
-        # Questions with yes or no answers
-        confirmations = ["y", "Y", "yes", "Yes", "YES"]
 
-        uses_tabs = input("Does the file use tabs to separate columns? [y/n]: ")
-        # convert the answer into a boolean
-        uses_tabs = True if uses_tabs in confirmations else False
+        delimiter = input("What does the file use to separate values? "
+                          "[t for tab, s for space, or , for comma]: ")
+        # convert the answer into an escaped character
+        if delimiter == 't':
+            delimiter = '\t'
+        elif delimiter == 's':
+            delimiter = '\s'
+        # comma can stay the same
 
         save_state = input("Would you like to save this as a permanent file"
                            "format? [y/n]: ")
+
+        confirmations = {"y", "Y", "yes", "Yes", "YES"}
         if save_state in confirmations:  # Save the data in formats.json
             name = input("What would you like to name the format?: ")
-            print("saving choices as format {0} ... ".format(name))
-            with open(json_path, 'w') as formats_file:
-                json.dump({
-                    "name": name,
-                    "uses_tabs": uses_tabs,
+            utils.save_formats_to_json(json_path, name,
+                {
                     "data_start": data_start,
                     "data_names": data_names,  # reveals number of columns
-                    "extra_dimensions": extra_dimensions
-                }, formats_file, ensure_ascii=False)
+                    "extra_dimensions": extra_dimensions,
+                    "delimiter": delimiter
+                })
 
         for file_ in files:
-            self.savuka.formatload(file_, data_start, data_names,
-                                   extra_dimensions, uses_tabs)
+            self.savuka.format_load(file_, data_start, data_names,
+                                   extra_dimensions, delimiter)
 
 
 def main():

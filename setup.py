@@ -45,7 +45,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     entry_points={
         'console_scripts': [
-            'savuka=src.commandline:main',
+            'pysavuka=src.commandline:main',
             ],
         },
     include_package_data=True,
@@ -64,23 +64,28 @@ setup(
     test_suite='tests',
 )
 
-if platform == 'win32':
+# as it turns out, downloading and installing external whl files is not trivial.
+"""if platform == 'win32':
     try:
         import tkinter
     except ImportError:
         system("pip3 install tkinter")
+        # download scipy from Gohlke's site and install
+        # also download and install numpy+MKL
 
-    from os import fdopen
-    s = stdout  # remember current stdout
+    # https://stackoverflow.com/questions/7243750/download-file-from-web-in-python-3
+    import urllib.request
+    import shutil
 
-    # Needed for unbuffered I/O
-    unbuffered = fdopen(stdout.fileno(), 'w', 0)
-    stdout = unbuffered
+    def get_from_url(url, file_name):
+        # Download the file from `url` and save it locally under `file_name`:
+        with urllib.request.urlopen(url) as response, open(file_name,
+                                                           'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
 
-    stdout.write("Im in windows")
 
-    # set it back to original
-    stdout = s
+    get_from_url(r'www.lfd.uci.edu/~gohlke/pythonlibs/numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl',
+                 path.join(here, 'numpy_download.whl'))
 
-else:
-    system("sudo apt install python3-tk")
+else:  # should work for unix and mac
+    system("sudo apt install python3-tk")"""

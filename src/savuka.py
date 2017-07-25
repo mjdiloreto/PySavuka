@@ -224,13 +224,14 @@ class Savuka:
     def plot_superimposed(self, buf_range):
         return plot_funcs.plot_superimposed(*self.get_buffers(buf_range))
 
-    def format_load(self, file_, data_start, data_names, extra_dimensions, uses_tabs):
+    def format_load(self, file_, data_start, data_names, extra_dimensions, delimiter):
         """load in the data from the given file in a generic way defined by the
         user interactively."""
 
         # parse the file according to the formstyle specified by the user
         data_dict = parse_funcs.parse_user_defined(file_, data_start,
-                                                   data_names, extra_dimensions)
+                                                   data_names, extra_dimensions,
+                                                   delimiter)
 
         # The hash value of the buffer must be unique, so this simple algorithm
         # ensures that no buffer in self will have hash collisions with others.

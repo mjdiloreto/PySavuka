@@ -17,11 +17,16 @@ There is no limit to the amount of metadata that can be stored in the
 dictionary, because specific routines will only require certain fields like
 dim0, dim1, etc."""
 from src import buffer
-from src.utils import floatify, intify
+from src.utils import floatify, intify, load_formats_from_json
 
 import re
+import os
 import numpy as np
 from collections import namedtuple
+
+library_root = os.path.abspath(os.path.join(__file__, "../.."))
+
+json_path = os.path.join(library_root, r'docs\formats.json')
 
 
 # TODO make general case file reader?
@@ -31,6 +36,8 @@ def parse(filepath, formstyle):
     """Dispatches parsing responsibility to the function associated with the
     formstyle specified. Ideally styles and functions should be named after
     the lab instrument that produce them."""
+
+    print(load_formats_from_json(json_path))
 
     # evaluate the function of the associated formating style.
     # this can raise a NameError if the formstyle is undefined.
@@ -44,6 +51,7 @@ def parse(filepath, formstyle):
     )
 
     return buf
+
 
 def convert_lines_to_list(file_, delimiter = ','):
     """Open the file, convert it to a list of tuples that represent the items
@@ -61,16 +69,13 @@ def convert_lines_to_list(file_, delimiter = ','):
     return split_lines
 
 
-def parse_user_defined(file_, data_start, data_names, extra_dimensions, uses_tabs):
+def parse_user_defined(file_, data_start, data_names, extra_dimensions, delimiter):
     """Prompts user for relevant information about the file, and returns a
     Buffer object with the parsed data."""
-    if uses_tabs:
-        split_lines = convert_lines_to_list(file_, delimiter='\t')
-    else:
-        split_lines = convert_lines_to_list(file_)
+    split_lines = convert_lines_to_list(file_, delimiter)
 
     # the actual thing we will return
-    data = buffer.Buffer()
+    data = {}
 
     for idx, name in enumerate(data_names):  # how many dimension columns?
         # instantiate the Dimension objects with the correct name and no data
@@ -80,7 +85,7 @@ def parse_user_defined(file_, data_start, data_names, extra_dimensions, uses_tab
         # get the value from the line specified from the user
         # (either first or second value on the line)
         dimension_data = (floatify(split_lines[line_number][0])
-                          or floatify(split_lines[line_number[1]]))
+                          or floatify(split_lines[line_number][1]))
         # add the value to our data object
         data['dim{0}'.format(len(data))] = buffer.Dimension(dimension_data, name)
 
@@ -89,7 +94,7 @@ def parse_user_defined(file_, data_start, data_names, extra_dimensions, uses_tab
             # add the value to the correct Dimension object
             data['dim{0}'.format(x)].append(floatify(line[x]))
 
-    return data
+    return buffer.Buffer(data)
 
 
 

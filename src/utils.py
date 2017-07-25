@@ -1,4 +1,5 @@
 import re
+import json
 import sys
 
 from collections import Iterable
@@ -14,6 +15,28 @@ def ask_for_files():
     return files
 
 
+def load_formats_from_json(file_):
+    with open(file_, 'r') as f:
+        data = json.load(f)
+        f.close()
+    return data
+
+
+def save_formats_to_json(file_, name, obj):
+    with open(file_, 'r') as f:
+        # load in what already exists
+        data = json.load(f)
+        f.close()
+
+    # assign the new object its name, overwrite if necessary
+    data[name] = obj
+
+    with open(file_, 'w') as f:
+        # save it back to the same file
+        json.dump(data, f, ensure_ascii=False)
+        f.close()
+
+
 def floatify(s):
     """Convert the string to a float, and return None if not possible."""
     try:
@@ -22,7 +45,7 @@ def floatify(s):
         try:
             # for numbers like '1/3', they first have to be evaluated
             return float(eval(s))
-        except (ValueError, SyntaxError):
+        except (ValueError, SyntaxError, TypeError):
             return
 
 

@@ -64,7 +64,7 @@ class Buffer(dict):
 
         # make the list a string,
         # strip the final space and comma. Aesthetics only.
-        string = "".join(s[:-2])
+        string = "".join(s)[:-2]
 
         return "{" + string + "}"
 
