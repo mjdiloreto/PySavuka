@@ -57,11 +57,11 @@ class Savuka:
         for i, buf in enumerate(self.data):
             # TODO, print the attributes as {0}, if present. or organize by
             # TODO attribute
-            r.append("buffer {0}: {1},\n\n".format(i, buf))
+            r.append("buffer {0}:\n {1},\n\n".format(i, buf))
 
         # make the list a string following Google python style guidelines.
         rep = "".join(r[:-2])
-        return "\n[" + rep + "\n]\n"
+        return "\n" + rep + "\n"
 
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified

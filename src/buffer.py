@@ -27,6 +27,10 @@ class Dimension(object):
     def set_name(self, new_name):
         self.name = str(new_name)
 
+    def sample(self, start, stop, step):
+        """sample data from start to stop by the step"""
+        self.data = self.data[start:stop:step]
+
     def append(self, val):
         # TODO maybe have Dimension inherit from list and have an as_nparray
         # TODO method
@@ -85,9 +89,9 @@ class Buffer(dict):
         if 'dim1' not in self:
             self['dim1'] = Dimension(np.asarray([]), 'default')
 
-        # many calculations assume data are numpy arrays
-        assert isinstance(self['dim0'].data, np.ndarray) \
-            and isinstance(self['dim1'].data, np.ndarray), \
+        # calculations must assume data is in Dimension form.
+        assert isinstance(self['dim0'], Dimension) \
+            and isinstance(self['dim1'], Dimension), \
             "first two dimensions in a Buffer must be numpy arrays."
 
     def get_xs(self, start=0, end=0):
