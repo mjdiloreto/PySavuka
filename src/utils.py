@@ -102,9 +102,9 @@ def string_to_index_list(s):
     b = []
 
     for x in re.split(",|\[|\]", s):
-        if rangeify(x):
+        if rangeify(x) is not None:
             b.extend(rangeify(x))
-        elif intify(x):
+        elif intify(x) is not None:
             b.append(intify(x))
 
     return b
@@ -116,7 +116,7 @@ def eval_string(string):
     try:
         a = eval(string)
         return a
-    except TypeError:
+    except (TypeError, NameError):  # it really is a string after all
         return string
 
 
@@ -132,30 +132,50 @@ def parseline(line):
     return tuple(arg for arg in re.split("\s", line))
 
 
-def parseline2(line, command):
+def parse_options(line):
     """for the given line, associate parameters to the corresponding
-    options, defaulting the name of the command.
-    e.g. parseline('a b -i c', 'command') should return
-        {'command' : [a, b], 'i' ; [c]}
+    options, defaulting to 'arg'. Also, evaluate things like numbers to
+    their correct types.
+    e.g.    parseline('a b -i c') should return
+            {'arg' : [a, b], 'i' : [c]}
+        so commands of form
+            'do_something arg1 arg2 -option x y -option2 z'
+        will be parsed as:
+            {args: [arg1, arg2],
+             option: [x, y],
+             option2: [z]}
 
     takes in line param from cmd.Cmd"""
 
-    opt = command
-    matched = {}
-    # split the line by spaces not preceded by commas
-    # to account for any parameters that are tuples
-    for idx, x in enumerate(re.split("(?<!,)\s", line)):
+    # anything before the first option will simply be an argument.
+    opt = 'args'
+    matched = {'args': []}
+    # split the line by spaces
+    for x in re.split("\s", line):
         # check for options to the command (anything preceded by '-'
         if re.match('-+[a-z]', x):
+            # initiallze it in the dictionary as an empty list
             opt = x.strip('-')
+            matched[opt] = []
 
         # match params to their given options
         else:
-            if opt not in matched:
-                matched[opt] = [x]
-            else:
-                matched[opt].append(x)
+            matched[opt].append(eval_string(x))
+
     return matched
+
+
+def print_helps(mod):
+    """Prints all the help texts (__doc__ aka triple-quoted strings under
+    each function) from module"""
+    helps = []
+
+    # everything in the module, classes, functions, variables, etc.
+    for name in mod.__dict__.values():
+        if callable(name):  # it is a function
+            helps.append(name.__doc__)
+
+    return helps
 
 
 # Which parameter is responsible for which exception?

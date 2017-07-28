@@ -4,6 +4,7 @@ to the program."""
 from src import savuka
 from src import plot_funcs
 from src import utils
+from src import models
 from src import svd
 
 import cmd
@@ -14,6 +15,7 @@ import sys
 from sys import stderr, stdout
 from time import sleep
 
+# TODO organize methods alphabetically
 # don't change the location of any files in this package.
 library_root = os.path.abspath(os.path.join(__file__, "../.."))
 
@@ -171,7 +173,6 @@ class CommandLine(cmd.Cmd):
         else:
             print('n')
 
-
     def do_formatload(self, line):
         """Dumbest method of formatting. Won't assume anything about data,
         but will ask the user everything and save the answers in
@@ -222,6 +223,19 @@ class CommandLine(cmd.Cmd):
             self.savuka.format_load(file_, data_start, data_names,
                                    extra_dimensions, delimiter)
 
+    def do_fit(self, line):
+        """Usage: fit buffer<int> model<name defined in models.py> """
+        pass
+
+    def do_models(self, line):
+        """list all the descriptions of all available models for fitting."""
+        print("".join(models.get_helps(line)))
+
+    def do_fit(self, line):
+        """Fit the data from the given buffer index to the given model."""
+        # TODO have options associated with parameters and check them here
+        args = utils.eval_string_list(utils.parseline(line))
+        self.savuka.fit(*args)
 
 def main():
     CommandLine().cmdloop()

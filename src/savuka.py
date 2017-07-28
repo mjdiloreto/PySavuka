@@ -7,7 +7,7 @@ from src import plot_funcs
 from src import utils
 
 import numpy as np
-
+from src import models
 
 def update_buffer(f):
     """Mutates the data in self.data according to buffer index/name and
@@ -139,15 +139,11 @@ class Savuka:
             return b
 
     def get_xs(self, idx, start=0, end=0):
+        # TODO decide how to do this
         """returns the x values within the range of the given buffer."""
 
         buffer = self.data[idx]
         return buffer.get_xs(start, end)
-    ''' allxs = buffer.get('dim0').data
-    if end == 0:
-        return allxs
-    else:
-        return allxs[start:end]'''
 
     def get_ys(self, idx, start=0, end=0):
         """returns the y values within the range of the given buffer. Each
@@ -242,3 +238,8 @@ class Savuka:
 
         # show the user the x and y values they parsed in
         print("\nSavuka read in the following data:\n" + str(data_dict))
+
+    def fit(self, idx, model, *args):
+        """Fit the data from the buffer at idx to the model specified by the
+        model argument."""
+        models.fit(self.get_ys(idx), model, self.get_xs(idx), *args)

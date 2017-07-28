@@ -116,6 +116,28 @@ class TestPysavuka(unittest.TestCase):
         self.assertEqual(utils.string_to_index_list('[1,2,3]'), [1, 2, 3])
         self.assertEqual(utils.string_to_index_list('[0,1,3-5]'), [0, 1, 3, 4, 5])
 
+    def test_parse_options(self):
+        po = utils.parse_options
+
+        self.assertEqual(po('arg1'), {'args': ['arg1']})
+        self.assertEqual(po('arg1 arg2'), {'args': ['arg1', 'arg2']})
+        self.assertEqual(po('arg1 arg2 -option'),
+                         {'args': ['arg1', 'arg2'],
+                          'option': []})
+        self.assertEqual(po('arg1 arg2 -option -option2'),
+                         {'args': ['arg1', 'arg2'],
+                          'option': [],
+                          'option2': []})
+        self.assertEqual(po('arg1 arg2 -option 0 -option2'),
+                         {'args': ['arg1', 'arg2'],
+                          'option': [0]
+                          'option2': []})
+        self.assertEqual(po('arg1 arg2 -option 0 1.0 -option2'),
+                         {'args': ['arg1', 'arg2'],
+                          'option': [0, 1.0],
+                          'option2': []})
+
+
     def debug_parse_funcs(self):
         s = savuka.Savuka()
         s.read(self.xyexample1, 'example')

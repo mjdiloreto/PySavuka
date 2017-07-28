@@ -145,10 +145,10 @@ class Buffer(dict):
             self['dim1'].data += data
 
     def update_y(self, new_data):
-        self['dim1'].update(new_data)
+        self['dim1'].set_data(new_data)
 
     def update_x(self, new_data):
-        self['dim0'].update(new_data)
+        self['dim0'].set_data(new_data)
 
 
 if __name__ == '__main__':
