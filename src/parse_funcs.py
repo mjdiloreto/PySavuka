@@ -29,9 +29,7 @@ library_root = os.path.abspath(os.path.join(__file__, "../.."))
 json_path = os.path.join(library_root, r'docs\formats.json')
 
 
-# TODO make general case file reader?
-# TODO maybe define parameterized reading:>
-# delimeter, columns(can be a range), logarithmic sampling, what the columns mean, if the user needs to be prompted for the column interpretation for each column.
+# TODO logarithmic sampling of data.
 def parse(filepath, formstyle):
     """Dispatches parsing responsibility to the function associated with the
     formstyle specified. Ideally styles and functions should be named after
@@ -180,8 +178,6 @@ def parse_applied_photophysics(files):
                                     "extra lines at the end of the file {0}" 
                                     "".format(files))
 
-        #TODO what do the x and y represent, and where is the z value? prompt?
-        #TODO allow for aliasing of the function name. Don't want to remember this super long name.
         return buffer.Buffer({
             'dim0': buffer.Dimension(xs, "Time-probably"),
             'dim1': buffer.Dimension(ys, "Intensity probably"),
@@ -192,7 +188,8 @@ def parse_applied_photophysics(files):
 
 
 def parse_cd(file_):
-    """Files will have the following format(space delimited):
+    """DEPRECATED. Use the cd format as defined by the JSON file."""
+    old_text = """Files will have the following format(space delimited):
         X_UNITS NANOMETERS
         Y_UNITS CD[mdeg]
         Y2_UNITS HT[V]  # can have abitrarily many ys
@@ -229,7 +226,6 @@ def parse_cd(file_):
         else:  # if not data, then some kind of metadata, save it's value.
             data[line[0]] = utils.floatify(line[1]) or line[1]
 
-    # TODO associate X_UNITS, Y_UNITS
     buf = buffer.Buffer(data)
 
     return buf

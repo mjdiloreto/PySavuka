@@ -1,6 +1,7 @@
-"""This module should contain all models to be used by the fitting routines."""
+"""This module should contain all models to be used by the fitting routines.
+The default parameters of the functions will be used as starting guesses to
+the parameter if the user doesn't provide them."""
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import inspect
@@ -10,12 +11,6 @@ import sys
 MODELS = ['linear', 'gaussian_1d']
 
 #  look to lmfit.lineshapes for a sampling of models
-
-# Guesses for models if user doesn't specify any parameters.
-INITIAL_GUESSES = {
-    'linear': {'slope': 1.0, 'intercept': 0.0},
-    'gaussian_1d': {'amp': 1.0, 'cen': 0.0, 'wid': 1.0},
-}
 
 
 def list_models(name=None):
@@ -37,7 +32,7 @@ def get_helps(name=None):
     return [m[1].__doc__ for m in list_models(name)]
 
 
-def linear(x, slope, intercept):
+def linear(x, slope=1.0, intercept=0.0):
     """
     linear:
         Parameters
@@ -52,7 +47,7 @@ def linear(x, slope, intercept):
     return slope * x + intercept
 
 
-def gaussian_1d(x, amp, cen, wid):
+def gaussian_1d(x, amp=1.0, cen=1.0, wid=1.0):
     """
     gaussian (1-d):
         Parameters

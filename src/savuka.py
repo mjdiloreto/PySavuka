@@ -4,7 +4,7 @@ user, and methods to analyze that data."""
 
 from src import parse_funcs
 from src import plot_funcs
-from src import utils
+from src import fit
 
 import numpy as np
 from src import models
@@ -55,8 +55,7 @@ class Savuka:
         # representation of the data. Called with built-in print function
         r = []
         for i, buf in enumerate(self.data):
-            # TODO, print the attributes as {0}, if present. or organize by
-            # TODO attribute
+            # TODO, print the attributes as {0}, if present. or organize by attribute
             r.append("buffer {0}:\n {1},\n\n".format(i, buf))
 
         # make the list a string following Google python style guidelines.
@@ -242,4 +241,4 @@ class Savuka:
     def fit(self, idx, model, *args):
         """Fit the data from the buffer at idx to the model specified by the
         model argument."""
-        models.fit(self.get_ys(idx), model, self.get_xs(idx), *args)
+        fit.fit(self.get_ys(idx), model, self.get_xs(idx), *args)

@@ -119,23 +119,31 @@ class TestPysavuka(unittest.TestCase):
     def test_parse_options(self):
         po = utils.parse_options
 
-        self.assertEqual(po('arg1'), {'args': ['arg1']})
-        self.assertEqual(po('arg1 arg2'), {'args': ['arg1', 'arg2']})
-        self.assertEqual(po('arg1 arg2 -option'),
-                         {'args': ['arg1', 'arg2'],
-                          'option': []})
-        self.assertEqual(po('arg1 arg2 -option -option2'),
-                         {'args': ['arg1', 'arg2'],
-                          'option': [],
-                          'option2': []})
-        self.assertEqual(po('arg1 arg2 -option 0 -option2'),
-                         {'args': ['arg1', 'arg2'],
-                          'option': [0]
-                          'option2': []})
-        self.assertEqual(po('arg1 arg2 -option 0 1.0 -option2'),
-                         {'args': ['arg1', 'arg2'],
-                          'option': [0, 1.0],
-                          'option2': []})
+        current_args, current_kwargs = po('arg1')
+        self.assertEqual(current_args, ['arg1'])
+        self.assertEqual(current_kwargs, {})
+
+        current_args, current_kwargs = po('arg1 arg2')
+        self.assertEqual(current_args, ['arg1', 'arg2'])
+        self.assertEqual(current_kwargs, {})
+
+        current_args, current_kwargs = po('arg1 arg2 -option')
+        self.assertEqual(current_args, ['arg1', 'arg2'])
+        self.assertEqual(current_kwargs, {'option': []})
+
+        current_args, current_kwargs = po('arg1 arg2 -option -option2')
+        self.assertEqual(current_args, ['arg1', 'arg2'])
+        self.assertEqual(current_kwargs, {'option': [], 'option2': []})
+
+        current_args, current_kwargs = po('arg1 arg2 -option 0 -option2')
+        self.assertEqual(current_args, ['arg1', 'arg2'])
+        self.assertEqual(current_kwargs, {'option': [0], 'option2': []})
+
+        current_args, current_kwargs = po('arg1 arg2 -option 0 1.0 -option2')
+        self.assertEqual(current_args, ['arg1', 'arg2'])
+        self.assertEqual(current_kwargs, {'option': [0, 1.0], 'option2': []})
+
+
 
 
     def debug_parse_funcs(self):

@@ -4,16 +4,13 @@ import matplotlib.pyplot as plt
 import lmfit
 
 
-def fit(data, model, x, params=None):
+def fit(data, model, x, params={}):
     """Fit the data [a 1-d array] to the model with the x axis [a 1-d array]."""
 
     for m in models.list_models():  # get the model function from the string name
         if model in m[0]:   # the function name
             model = m[1]  # the function object
             break
-
-    if not params:  # Use the terrible guesses to get the ball rolling.
-        params = models.INITIAL_GUESSES['{0}'.format(model.__name__)]
 
     m = lmfit.models.Model(model)
     result = m.fit(data, x=x, **params)

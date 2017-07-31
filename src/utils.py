@@ -7,11 +7,13 @@ from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
 
 def ask_for_files():
-    # TODO Should I close these applications?
+    """Pull up a gui to prompt user for files. Works cross-platform"""
     app = QApplication(sys.argv)
 
     files, _ = QFileDialog.getOpenFileNames(QWidget(), "Select data files",
                                             "", "All Files (*)")
+
+    # app should probably be closed here.
     return files
 
 
@@ -80,7 +82,6 @@ def parse_buffers(line):
     """Creates a list of buffers entered by the use, either in the form
     <0 1 3 4>, or <0-1 3-4>. Both will return [0,1,3,4]"""
     a = []
-    # TODO come back and make this clever damn it.
     for x in re.split("\s", line):
         if intify(x):
             a.append(intify(x))
@@ -116,7 +117,7 @@ def eval_string(string):
     try:
         a = eval(string)
         return a
-    except (TypeError, NameError):  # it really is a string after all
+    except (TypeError, NameError):  # if it really is a string after all
         return string
 
 
@@ -133,36 +134,37 @@ def parseline(line):
 
 
 def parse_options(line):
-    """for the given line, associate parameters to the corresponding
-    options, defaulting to 'arg'. Also, evaluate things like numbers to
-    their correct types.
-    e.g.    parseline('a b -i c') should return
-            {'arg' : [a, b], 'i' : [c]}
-        so commands of form
-            'do_something arg1 arg2 -option x y -option2 z'
-        will be parsed as:
-            {args: [arg1, arg2],
-             option: [x, y],
-             option2: [z]}
+    """For the given line, separate arguments into either args or kwargs,
+    depending on whether they are preceded by '-option'.
+    E.g.
+    parse_option('0 1 -option yes -option2 no')
+    -> args = (0, 1)
+       kwargs = {option: yes, option2: no}
 
-    takes in line param from cmd.Cmd"""
+    All entries are converted to their proper python types as well.
+    i.e. 0 is int(0) not '0'
+    """
 
     # anything before the first option will simply be an argument.
-    opt = 'args'
-    matched = {'args': []}
+    add_to_args = True  # have we not encountered an -option yet?
+    args = []
+    kwargs = {}
     # split the line by spaces
     for x in re.split("\s", line):
         # check for options to the command (anything preceded by '-'
         if re.match('-+[a-z]', x):
             # initiallze it in the dictionary as an empty list
+            add_to_args = False
             opt = x.strip('-')
-            matched[opt] = []
-
+            kwargs[opt] = []
+        # Have we still not seen an option?
+        elif add_to_args:
+            args.append(eval_string(x))
         # match params to their given options
         else:
-            matched[opt].append(eval_string(x))
+            kwargs[opt].append(eval_string(x))
 
-    return matched
+    return args, kwargs
 
 
 def print_helps(mod):

@@ -53,7 +53,6 @@ class CommandLine(cmd.Cmd):
         print("This command is unsupported: {0}".format(line))
 
     def do_read(self, line):
-        # TODO "would you like to use a predefined file format? [y/n]:"
         """usage: read
            user will be prompted to select file(s) and asked about the
            format of those files, as specified by supported_formats.txt
@@ -124,7 +123,7 @@ class CommandLine(cmd.Cmd):
         return svd.svd()
 
     def do_load(self, line):
-        # TODO make the precmd method split line into args and pass to commands
+        # TODO make the precmd method split line into args and pass to commands. use utils.parse_options and change all arguments <line> to the actual args it should take.
         """usage: load [file path] [format type]
             format type will be the name of the instrument
             used to collect the data. /docs/supported_formats.txt
@@ -234,8 +233,16 @@ class CommandLine(cmd.Cmd):
     def do_fit(self, line):
         """Fit the data from the given buffer index to the given model."""
         # TODO have options associated with parameters and check them here
-        args = utils.eval_string_list(utils.parseline(line))
-        self.savuka.fit(*args)
+        args, kwargs = utils.parse_options(line)
+        self.savuka.fit(*args, **kwargs)
+
+    def do_dr(self, line):
+        """Read in an example dataset."""
+        if line == 'xy1':
+            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample1.txt", "example")
+        elif line == 'photo':
+            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\applied-photophysics-stopped-flow-data\R9.csv", "photo")
+
 
 def main():
     CommandLine().cmdloop()

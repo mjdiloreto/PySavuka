@@ -32,8 +32,7 @@ class Dimension(object):
         self.data = self.data[start:stop:step]
 
     def append(self, val):
-        # TODO maybe have Dimension inherit from list and have an as_nparray
-        # TODO method
+        # TODO maybe have Dimension inherit from list and have an as_nparray method
         # val must be in list because that's how numpy appends.
         self.data = np.append(self.data, [val])
 
