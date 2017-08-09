@@ -19,12 +19,15 @@ unix_requirements = [  # should work for mac and linux
     'matplotlib',
     'scipy',
     'PyQt5',
+    'terminaltables'
 ]
 
 win32_requirements = [
     'numpy',
     'matplotlib',
     'PyQt5',
+    'terminaltables'
+
     # 'scipy'  # -need to install wheel from Christopher Gohlke's website
 ]
 

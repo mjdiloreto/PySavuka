@@ -8,28 +8,37 @@ import inspect
 import sys
 
 # All the models currently implemented
-MODELS = ['linear', 'gaussian_1d']
+# The format of the dictionary is:
+#   exact_name_of_function: [list of aliases the user can use]
+MODELS = {'linear': ['linear', 'line'],
+          'gaussian_1d': ['gaussian_1d', 'gauss', 'gaussian', '1dgauss'],
+}
 
 #  look to lmfit.lineshapes for a sampling of models
 
 
-def list_models(name=None):
+def get_models(name=None):
     """Return a list of all the model functions in this module."""
     funcs = inspect.getmembers(sys.modules[__name__], inspect.isfunction)
 
     if not name:
         # return the functions from all models in the list
-        fit_models = [f for f in funcs if f[0] in MODELS]
+        fit_models = [f[1] for f in funcs if f[0] in MODELS]
     else:
-        fit_models = [f for f in funcs if f[0] in MODELS and name in f[0]]
-
+        # return the function if it is in fact a model function and the
+        # provided name matches one of the aliases.
+        fit_models = [f[1] for f in funcs if f[0] in MODELS.keys()
+                      and name in MODELS[f[0]]]
+        # if you provide a name, you expect one function
+        return fit_models[0]
+    # otherwise, you expect a list of function objects.
     return fit_models
 
 
 def get_helps(name=None):
     """Return the list of help texts from the model functions (__doc__ aka the
     triple-quoted lines below the fucntion definition."""
-    return [m[1].__doc__ for m in list_models(name)]
+    return [m.__doc__ for m in get_models(name)]
 
 
 def linear(x, slope=1.0, intercept=0.0):

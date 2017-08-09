@@ -238,7 +238,15 @@ class Savuka:
         # show the user the x and y values they parsed in
         print("\nSavuka read in the following data:\n" + str(data_dict))
 
-    def fit(self, idx, model, *args):
+    def fit(self, idx, model, **kwargs):
         """Fit the data from the buffer at idx to the model specified by the
         model argument."""
-        fit.fit(self.get_ys(idx), model, self.get_xs(idx), *args)
+        if isinstance(idx, int):
+            fit.fit(self.get_ys(idx), model, self.get_xs(idx), **kwargs)
+        elif isinstance(idx, tuple):
+            ys = []
+            for i in idx:
+                ys.append(self.get_ys(i))
+            ys = np.asarray(ys)
+            # TODO figure out what x coordinate should be. Should we just use the first set, assuming consistency? Should we force consistency? Should we interpolate and prompt?
+            fit.fit(ys, model, self.get_xs(idx[0]), **kwargs)

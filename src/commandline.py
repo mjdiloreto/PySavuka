@@ -6,6 +6,7 @@ from src import plot_funcs
 from src import utils
 from src import models
 from src import svd
+from src import params
 
 import cmd
 import re
@@ -32,6 +33,7 @@ class CommandLine(cmd.Cmd):
     def __init__(self):
         super(CommandLine, self).__init__()
         self.savuka = savuka.Savuka()
+        self.params = None
 
     def postcmd(self, stop, line):
         # wait 1/10 second after each command. This fixes some weird
@@ -222,19 +224,21 @@ class CommandLine(cmd.Cmd):
             self.savuka.format_load(file_, data_start, data_names,
                                    extra_dimensions, delimiter)
 
-    def do_fit(self, line):
-        """Usage: fit buffer<int> model<name defined in models.py> """
-        pass
-
     def do_models(self, line):
         """list all the descriptions of all available models for fitting."""
         print("".join(models.get_helps(line)))
 
     def do_fit(self, line):
-        """Fit the data from the given buffer index to the given model."""
-        # TODO have options associated with parameters and check them here
-        args, kwargs = utils.parse_options(line)
-        self.savuka.fit(*args, **kwargs)
+        """Fit the data from the given buffer index to the given model.
+        usage:
+            fit <buffer index> -model <name> """
+        if self.params is None:  # initialize params first
+            self.do_pd('')
+            self.do_fit(line)
+        else:
+            args, kwargs = utils.parse_options(line)
+            kwargs['params'] = self.params
+            self.savuka.fit(*args, **kwargs)
 
     def do_dr(self, line):
         """Read in an example dataset."""
@@ -243,6 +247,28 @@ class CommandLine(cmd.Cmd):
         elif line == 'photo':
             self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\applied-photophysics-stopped-flow-data\R9.csv", "photo")
 
+    def do_sp(self, line):
+        if self.params is None:  # initialize params
+            model = input("Create parameters for which model? "
+                          "(use 'models' command for help): ")
+            self.params = params.create_default_params(models.get_models(model))
+            #params.print_params(self.params)  # show the user what they have
+        else:  # TODO change specific params
+            pass
+
+    def do_pd(self, line):
+        num_bufs = utils.eval_string(line)
+        if self.params is None:
+            self.do_sp('')  # set the initial params
+            self.do_pd('{0}'.format(num_bufs))
+        else:
+            self.params = params.main(num_bufs, self.params)
+
+    def do_debug(self, line):
+        self.do_dr('xy1')
+        self.do_dr('xy1')
+        self.do_pd('2')
+        self.do_fit('(0,1) line')
 
 def main():
     CommandLine().cmdloop()

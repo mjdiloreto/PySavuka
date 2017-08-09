@@ -117,7 +117,7 @@ def eval_string(string):
     try:
         a = eval(string)
         return a
-    except (TypeError, NameError):  # if it really is a string after all
+    except (TypeError, NameError, SyntaxError):  # if it really is a string after all
         return string
 
 
@@ -153,7 +153,7 @@ def parse_options(line):
     for x in re.split("\s", line):
         # check for options to the command (anything preceded by '-'
         if re.match('-+[a-z]', x):
-            # initiallze it in the dictionary as an empty list
+            # initialize it in the dictionary as an empty list
             add_to_args = False
             opt = x.strip('-')
             kwargs[opt] = []
