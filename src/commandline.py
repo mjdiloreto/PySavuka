@@ -7,12 +7,12 @@ from src import utils
 from src import models
 from src import svd
 from src import params
+from src import fit
 
 import cmd
 import re
 import os
 import sys
-
 from sys import stderr, stdout
 from time import sleep
 
@@ -33,7 +33,9 @@ class CommandLine(cmd.Cmd):
     def __init__(self):
         super(CommandLine, self).__init__()
         self.savuka = savuka.Savuka()
+        self.prompt = '(savuka)'
         self.params = None
+        self.fit = None  #TODO encapsulate fitting
 
     def postcmd(self, stop, line):
         # wait 1/10 second after each command. This fixes some weird
@@ -196,7 +198,6 @@ class CommandLine(cmd.Cmd):
             k = input("What is the name of that dimension?: ")
             extra_dimensions[k] = v
 
-
         delimiter = input("What does the file use to separate values? "
                           "[t for tab, s for space, or , for comma]: ")
         # convert the answer into an escaped character
@@ -229,46 +230,95 @@ class CommandLine(cmd.Cmd):
         print("".join(models.get_helps(line)))
 
     def do_fit(self, line):
+        # TODO let user redo a fit. Stop calling other methods from this. just save model, fit, result, as attributes.
         """Fit the data from the given buffer index to the given model.
         usage:
-            fit <buffer index> -model <name> """
+            fit <buffer index> -model <name>
+
+            options:
+                buffer index: int OR tuple(no spaces, e.g. (0,1,2))
+                    What buffers should be fit to the model
+                name: string
+                    The name of the model as specified in models.py"""
+        args, kwargs = utils.parse_options(line)
         if self.params is None:  # initialize params first
-            self.do_pd('')
+            # make parameters for a single buffer
+            if isinstance(args[0], int):
+                # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
+                num_bufs = 1
+            # make parameters for multiple buffers.
+            elif isinstance(args[0], tuple):
+                # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
+                num_bufs = len(args[0])
+
+            self.do_pd("{0} {1}".format(num_bufs, args[1]))
             self.do_fit(line)
         else:
-            args, kwargs = utils.parse_options(line)
             kwargs['params'] = self.params
             self.savuka.fit(*args, **kwargs)
 
     def do_dr(self, line):
         """Read in an example dataset."""
         if line == 'xy1':
-            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample1.txt", "example")
+            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample1.txt",
+                             "example")
+        elif line == 'xy4':
+            self.savuka.read(
+                r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample4.txt",
+                "example")
         elif line == 'photo':
             self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\applied-photophysics-stopped-flow-data\R9.csv", "photo")
 
-    def do_sp(self, line):
-        if self.params is None:  # initialize params
-            model = input("Create parameters for which model? "
-                          "(use 'models' command for help): ")
-            self.params = params.create_default_params(models.get_models(model))
-            #params.print_params(self.params)  # show the user what they have
-        else:  # TODO change specific params
-            pass
-
     def do_pd(self, line):
-        num_bufs = utils.eval_string(line)
-        if self.params is None:
-            self.do_sp('')  # set the initial params
-            self.do_pd('{0}'.format(num_bufs))
+        args, kwargs = utils.parse_options(line)
+
+        if not args:
+            print("please provide the number of buffers and the model"
+                  " for the parameters.")
+
+        num_bufs = args[0]
+        model = args[1]
+        model = models.get_models(model)  # convert string to function
+        default_params = params.create_default_params(model)
+        if self.params is None:  # set the initial guesses
+            self.params = default_params
+            self.do_pd('{0}'.format(line))  # rerun with new params
         else:
             self.params = params.main(num_bufs, self.params)
 
+    def do_fit_result(self, line):
+        """If we have run a fit, print its results"""
+        if isinstance(self.fit, fit.Fit):
+            self.fit.report_result()
+        else:
+            print(self.fit)
+
+    def do_fit_plot(self, line):
+        if isinstance(self.fit, fit.Fit):
+            self.fit.plot_result()
+
+    def do_rg(self, line):
+        self.savuka.read(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_0.csv',
+                         'gauss_test')
+        self.savuka.read(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_1.csv',
+            'gauss_test')
+        self.savuka.read(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_2.csv',
+            'gauss_test')
+        self.savuka.read(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_3.csv',
+            'gauss_test')
+        self.savuka.read(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_4.csv',
+            'gauss_test')
+
     def do_debug(self, line):
         self.do_dr('xy1')
-        self.do_dr('xy1')
-        self.do_pd('2')
-        self.do_fit('(0,1) line')
+        self.do_dr('xy4')
+        # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
+        self.do_fit('(0,1) gauss')
+
 
 def main():
     CommandLine().cmdloop()

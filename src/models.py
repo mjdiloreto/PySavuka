@@ -41,7 +41,7 @@ def get_helps(name=None):
     return [m.__doc__ for m in get_models(name)]
 
 
-def linear(x, slope=1.0, intercept=0.0):
+def linear(x, intercept=0.0, slope=1.0):
     """
     linear:
         Parameters

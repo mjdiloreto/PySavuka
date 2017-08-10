@@ -8,7 +8,6 @@ from src.utils import eval_string
 import inspect
 import sys
 
-from terminaltables import AsciiTable
 from lmfit import Model, Parameters, Parameter
 
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QAction,
@@ -199,26 +198,6 @@ class App(QWidget):
         return self.parameters
 
 
-def print_params(params):
-    """Prints the Parameter values in a more visually pleasing way than
-    print(Parameters())."""
-    attributes = []
-    s = []
-
-    for x in params.items():
-        members = inspect.getmembers(x[1], lambda a: not(inspect.isroutine(a)))
-        atts = [a for a in members if not a[0].startswith("_")]
-        attributes.append(atts)
-
-    print(attributes)
-
-    for a in attributes:
-        for i in a:
-            row = "{0} {1}".format(i[0], i[1])
-
-    table = AsciiTable(s)
-
-
 def create_default_params(model):
     """Create a set of parameters for the given model."""
 
@@ -233,5 +212,3 @@ def main(num_bufs, params):
     ex = App(num_bufs, params)
     app.exec()
     return ex.createParams()
-
-

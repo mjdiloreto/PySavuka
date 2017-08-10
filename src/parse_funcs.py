@@ -73,7 +73,8 @@ def convert_lines_to_list(file_, delimiter = ','):
     gets converted to [(1.00, 2.00, 3.00), (4.00, 5.00, 6.00)]"""
 
     with open(file_) as f:
-        split_lines = [re.split(delimiter, line) for line in f]
+        split_lines = [re.split(delimiter, line.strip('\n')) for line in f
+                       if re.split(delimiter, line.strip('\n')) != ['']]
         f.close()
     return split_lines
 

@@ -5,7 +5,6 @@ user, and methods to analyze that data."""
 from src import parse_funcs
 from src import plot_funcs
 from src import fit
-
 import numpy as np
 from src import models
 
@@ -242,11 +241,13 @@ class Savuka:
         """Fit the data from the buffer at idx to the model specified by the
         model argument."""
         if isinstance(idx, int):
-            fit.fit(self.get_ys(idx), model, self.get_xs(idx), **kwargs)
+            results = fit.fit(self.get_ys(idx), model, self.get_xs(idx), **kwargs)
         elif isinstance(idx, tuple):
-            ys = []
-            for i in idx:
-                ys.append(self.get_ys(i))
+            ys = [self.get_ys(i) for i in idx]
             ys = np.asarray(ys)
             # TODO figure out what x coordinate should be. Should we just use the first set, assuming consistency? Should we force consistency? Should we interpolate and prompt?
-            fit.fit(ys, model, self.get_xs(idx[0]), **kwargs)
+            results = fit.fit(ys, model, self.get_xs(idx[0]), **kwargs)
+
+        fit.report_result(results[0])
+        fit.plot_result(*results)
+
