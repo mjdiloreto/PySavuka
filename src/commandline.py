@@ -28,7 +28,13 @@ FORMATS = open(formats_path).read()
 
 
 class CommandLine(cmd.Cmd):
-    intro = "Welcome to PySavuka. type 'help' for help"
+    intro = """
+    
+    Welcome to PySavuka 
+    
+    type 'help' for help
+    
+    """
 
     def __init__(self):
         super(CommandLine, self).__init__()
@@ -43,7 +49,14 @@ class CommandLine(cmd.Cmd):
         sleep(0.1)
 
     def do_quit(self, line):
-        """Exit savuka"""
+        """Exit savuka:
+        Usage:
+            quit <option>
+
+        Options:
+            -s save state of the program.
+            -d save data loaded in
+            """
         print("Exit")
         sys.exit()
 
@@ -57,29 +70,30 @@ class CommandLine(cmd.Cmd):
         print("This command is unsupported: {0}".format(line))
 
     def do_read(self, line):
-        """usage: read
-           user will be prompted to select file(s) and asked about the
+        """user will be prompted to select file(s) and asked about the
            format of those files, as specified by supported_formats.txt
-           in the docs folder of this project."""
+           in the docs folder of this project.
+
+        Usage: read
+            Options:
+                None
+           """
+
+        def read_help(filepaths, formstyle):
+            for x in filepaths:
+                try:
+                    # store the file's information in the savuka object.
+                    self.savuka.read(x, formstyle)
+                except NameError:
+                    newformstyle = input(
+                        "\nThe specified format [{0}] is unsupported,"
+                        " enter a new one: ".format(formstyle))
+                    return self.read_help(filepaths, newformstyle)
+
         filepaths = utils.ask_for_files()
         if filepaths is not "":
             formstyle = input("\nFormat of the file(s): ")
-            return self.read_help(filepaths, formstyle)
-
-    def read_help(self, filepaths, formstyle):
-        for x in filepaths:
-            try:
-                # store the file's information in the savuka object.
-                self.savuka.read(x, formstyle)
-            except FileNotFoundError:
-                newfilepath = input("\nThe specified path [{0}] does not exist,"
-                                    " enter a new one: ".format(filepaths))
-                return self.read_help(newfilepath, formstyle)
-            except NameError:
-                newformstyle = input(
-                    "\nThe specified format [{0}] is unsupported,"
-                    " enter a new one: ".format(formstyle))
-                return self.read_help(filepaths, newformstyle)
+            return read_help(filepaths, formstyle)
 
     @plot_funcs.show_after_completion
     @utils.check_input(exceptions_and_params={})
@@ -126,12 +140,39 @@ class CommandLine(cmd.Cmd):
 
         return svd.svd()
 
+    def do_formats(self, line):
+        """List all currently defined formats for files."""
+        # get the dictionary of formats from formats.json
+        defined_formats = utils.load_formats_from_json(json_path)
+
+        formats = []
+
+        # iterate through the format names
+        for formstyle in defined_formats.keys():
+            name = "\n{0}:\n".format(formstyle)
+            # things like 'data_start, extra_dimensions, etc.)
+            desc = ["\t{0}\t{1}\n".format(k, v) for k, v
+                    in defined_formats[formstyle].items()]
+            desc = "".join(desc)  # make them all one string
+
+            formats.append(name + desc)
+
+        print("".join(formats))
+
+
+
     def do_load(self, line):
-        # TODO make the precmd method split line into args and pass to commands. use utils.parse_options and change all arguments <line> to the actual args it should take.
-        """usage: load [file path] [format type]
-            format type will be the name of the instrument
-            used to collect the data. /docs/supported_formats.txt
-            for more"""
+        """Load the file of the given format into the program.
+
+        Usage:
+            load [file path] [format type]
+
+        Options:
+            file path:
+                The exact path of the file to be read in.
+            format type:
+                The format of the file. Specified in formats.json
+                or by using the formats command."""
 
         @utils.check_input(exceptions_and_params={FileNotFoundError: 0,
                                                   SyntaxError: 1,
@@ -149,37 +190,74 @@ class CommandLine(cmd.Cmd):
 
     @utils.check_input(exceptions_and_params={})
     def do_print(self, line):
-        """Display the data contents of the files read into the program."""
+        """Display the data contents of the files read into the program.
+        Usage:
+            print
+
+        Options:
+            None"""
         if line is "":
             print(self.savuka)
             # Todo make line params specify buffer indices and names to print
 
     @utils.check_input(exceptions_and_params={})
     def do_shift(self, line):
-        """Add two buffers along the desired """
+        """Add the given amount to all y values of the given buffer.
+
+        Usage:
+            pow <buffer number> <amount>
+
+        Options:
+            buffer number: int
+                Which buffer should be raised to the exponent?
+            amount: int or float
+                Add this amount to all y values.
+        """
         args = utils.parseline(line)
         self.savuka.shift_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     @utils.check_input(exceptions_and_params={})
     def do_scale(self, line):
+        """Multiply all y values in a buffer by the given scalar.
+
+        Usage:
+            pow <buffer number> <scalar>
+
+        Options:
+            buffer number: int
+                Which buffer should be raised to the exponent?
+            scalar: int or float or in the form a/b
+                Scale all y values by this amount."""
         args = utils.parseline(line)
         self.savuka.scale_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
     @utils.check_input(exceptions_and_params={})
     def do_pow(self, line):
+        """Raise all y values in a buffer to the given power.
+
+        Usage:
+            pow <buffer number> <exponent>
+
+        Options:
+            buffer number: int
+                Which buffer should be raised to the exponent?
+            exponent: int or float
+                exponent to raise all y values to.
+        """
+
         args = utils.parseline(line)
         self.savuka.pow_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
-    def do_check(self, line):
-        if '\t' in line:
-            print('y')
-        else:
-            print('n')
-
     def do_formatload(self, line):
-        """Dumbest method of formatting. Won't assume anything about data,
-        but will ask the user everything and save the answers in
-        formats.txt"""
+        """Specify a file format and load in file(s) accordingly. Provides the
+        ability to save the format for future use using the read or load commands.
+
+        Usage:
+            formatload
+
+        Options:
+            None
+        """
         files = utils.ask_for_files()
         cols = utils.intify(input("How many columns?: "))
         data_start = utils.intify(input("What line does data "
@@ -226,7 +304,13 @@ class CommandLine(cmd.Cmd):
                                    extra_dimensions, delimiter)
 
     def do_models(self, line):
-        """list all the descriptions of all available models for fitting."""
+        """list all the descriptions of all available models for fitting.
+        Usage:
+            models
+
+        Options:
+            None
+        """
         print("".join(models.get_helps(line)))
 
     def do_fit(self, line):
@@ -270,11 +354,22 @@ class CommandLine(cmd.Cmd):
             self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\applied-photophysics-stopped-flow-data\R9.csv", "photo")
 
     def do_pd(self, line):
+        """Set the parameters for fitting.
+        Usage:
+            pd <number of buffers> <model>
+
+        Options:
+            number of buffers:
+                How many buffers should have parameters specified for the fit?
+            model:
+                name of the model function that will be fit, as specified by the
+                models command
+                """
         args, kwargs = utils.parse_options(line)
 
-        if not args:
-            print("please provide the number of buffers and the model"
-                  " for the parameters.")
+        if not line:  # user didn't provide necessary options
+            print(self.do_help("pd"))
+            return
 
         num_bufs = args[0]
         model = args[1]

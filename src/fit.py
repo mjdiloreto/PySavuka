@@ -10,7 +10,11 @@ from lmfit.minimizer import MinimizerResult
 
 
 def generate_dataset(params, i, x, model):
-    """calc data from params for data set i"""
+    """calc data from params for data set i. This function depends on the
+    essential requirement that ALL Parameter names are in the form:
+    name_i
+    where name is the parameter name, and i is the number buffer that
+    it is tied to."""
     # get all the parameters whose names end in the number i, and assign them
     # to parameter names that do not end in i
     parameters = {re.sub('_[0-9]*', '', k): v.value for k, v in params.items()
@@ -40,14 +44,6 @@ def objective(params, x, data, model):
 
 def fit(data, model, x, params={}):
     """Fit the data [a 1-d array] to the model with the x axis [a 1-d array]."""
-    '''
-
-    m = lmfit.models.Model(model)
-    result = m.fit(data, x=x, **params)
-    print(result.fit_report())
-    result.plot()
-    plt.show()'''
-
     # find the function object with the given name from the models.
     model = models.get_models(model)
 
