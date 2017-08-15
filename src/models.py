@@ -12,9 +12,14 @@ import sys
 #   exact_name_of_function: [list of aliases the user can use]
 MODELS = {'linear': ['linear', 'line'],
           'gaussian_1d': ['gaussian_1d', 'gauss', 'gaussian', '1dgauss'],
+          'two_state_equilibrium_chemical_denaturation': ['two_state',]
 }
 
 #  look to lmfit.lineshapes for a sampling of models
+
+
+# CONSTANTS
+GAS_CONSTANT_KCAL = 0.0019872036
 
 
 def get_models(name=None):
@@ -60,7 +65,7 @@ def gaussian_1d(x, amp=1.0, cen=1.0, wid=1.0):
     """
     gaussian (1-d):
         Parameters
-                ----------
+        ----------
                 x : array of values (data to be fit to gaussian model).
                 amplitude : float
                     rate of change of x.
@@ -74,7 +79,25 @@ def gaussian_1d(x, amp=1.0, cen=1.0, wid=1.0):
     return (amp/(np.sqrt(2*np.pi)*wid)) * np.exp(-(x-cen)**2/(2*wid**2))
 
 
+def two_state_equilibrium_chemical_denaturation(
+        x, deltag=5.0, m=1.8, nativeyint=0.0, unfoldedyint=250000.0,
+        nativeyslope=1000, unfoldedyslope=2.0, temperature=298.15):
+    """
+    two state equilibrium (chemical denaturation):
+        Parameters
+        ----------
+                x: denaturant concentrations
+                deltag:
 
 
+    """
+    delta_g_at_concentration = deltag + m * x
+    equilibrium_constant = np.exp(-delta_g_at_concentration/(GAS_CONSTANT_KCAL*temperature))
+    unfolded_fraction = equilibrium_constant / (1 + equilibrium_constant)
+
+    native_y_at_concentration = nativeyint + nativeyslope * x
+    unfolded_y_at_concentration = unfoldedyint + unfoldedyslope * x
+
+    return unfolded_fraction*unfolded_y_at_concentration + (1-unfolded_fraction)*native_y_at_concentration
 
 

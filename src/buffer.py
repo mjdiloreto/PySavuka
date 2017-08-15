@@ -18,7 +18,7 @@ class Dimension(object):
         return "(" + self.name + ", " + str(self.data) + ")\n"
 
     def __init__(self, data=None, name=None):
-        self.data = data if data is not None else np.asarray([])
+        self.data = np.asarray(data) if data is not None else np.asarray([])
         self.name = name if name is not None else ''
 
     def set_data(self, new_data):
@@ -91,7 +91,8 @@ class Buffer(dict):
         # calculations must assume data is in Dimension form.
         assert isinstance(self['dim0'], Dimension) \
             and isinstance(self['dim1'], Dimension), \
-            "first two dimensions in a Buffer must be numpy arrays."
+            ("first two dimensions in a Buffer must be numpy arrays. Instead "
+             "got: {0} and {1}".format(self['dim0'], self['dim1']))
 
     def get_xs(self, start=0, end=0):
         """returns the x values within the range of the given buffer."""

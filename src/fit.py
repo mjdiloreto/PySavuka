@@ -24,54 +24,72 @@ def generate_dataset(params, i, x, model):
     return model(x, **parameters)
 
 
-def objective(params, x, data, model):
+def objective(params, data, model):
     """Calculate total residual for fits to either a single dataset or
     multiple datasets contained in a 2D array, and fit to the model."""
-    ndata = data.shape
-    if len(data.shape) == 1:  # fit a single dataset
-        resid = 0.0 * data[:]
-        resid[:] = data[:] - generate_dataset(params, 0, x, model)
-        return resid.flatten()
+    ndata = len(data)
+    # There should really be two functions, one for fitting single buffers, and
+    # one for fitting multiple. This will work though.
 
-    elif len(data.shape) == 2:  # fit multiple datasets
-        resid = 0.0 * data[:]
+    try:  # multiple buffer case
+        resid = 0.0 * np.asarray([data[i]['y'] for i in range(ndata)])
         # make residual per data set
-        for i in range(ndata[0]):
-            resid[i, :] = data[i, :] - generate_dataset(params, i, x, model)
+        for i in range(ndata):
+            resid[i] = data[i]['y'] - generate_dataset(params, i, data[i]['x'],
+                                                       model)
         # now flatten this to a 1D array, as minimize() needs
         return resid.flatten()
+    except ValueError:  # This is the case for single buffers
+        resid = data[0]['y'] - generate_dataset(params, 0, data[0]['x'], model)
+        return resid.flatten()
 
 
-def fit(data, model, x, params={}):
+def fit(data, model, params={}):
     """Fit the data [a 1-d array] to the model with the x axis [a 1-d array]."""
     # find the function object with the given name from the models.
     model = models.get_models(model)
 
-    result = minimize(objective, params, args=(x, data, model))
-    return (result, data, x, model)
+    result = minimize(objective, params, args=(data, model))
+    return (result, data, model)
 
 
 def report_result(result):
     """If there is a result, display it."""
     if isinstance(result, MinimizerResult):
         print(fit_report(result.params))
+        if hasattr(result, "chisq"):
+            print("[[Chi sq]]\n\s\s\s\s{0}".format(result.chisq))
+        if hasattr(result, "redchi"):
+            print("[[Chi sq (reduced)]]\n\t{0}".format(result.redchi))
     else:
         print("There was no result to the fit. "
               "<{0}> was returned instead".format(result))
 
 
-def plot_result(result, data, x, model):
+def plot_result(result, data, model):
     """Plot the fitted curves from a MinimizerResult object."""
     plt.figure()
 
     # TODO handle discrepancy between one and multiple buffers. DRY
-    if len(data.shape) == 1:
-        fitted_ys = generate_dataset(result.params, 0, x, model)
-        plt.plot(x, data[:], 'o', x, fitted_ys, '-')
+    if len(data) == 1:
+        fitted_ys = generate_dataset(result.params, 0, data[0]['x'], model)
+        plt.plot(data[0]['x'], data[0], 'o', data[0]['x'], fitted_ys, '-')
 
-    elif len(data.shape) == 2:
-        for i in range(data.shape[0]):
-            fitted_ys = generate_dataset(result.params, i, x, model)
-            plt.plot(x, data[i, :], 'o', x, fitted_ys, '-')
+    else:
+        for name, param in result.params.items():
+            print("{0}: {1}".format(name, param.value))
+        for i in range(len(data)):
+            xs = data[i]['x']
+            ys = data[i]['y']
+
+            fig = plt.figure()
+            frame1 = fig.add_axes((.1,.3,.8,.6))
+            fitted_ys = generate_dataset(result.params, i, xs, model)
+            plt.plot(xs, ys, 'o', xs, fitted_ys, '-')
+            frame2 = fig.add_axes((.1,.1,.8,.2))
+            new_x = np.linspace(xs[0], xs[-1], result.residual.shape[0])
+            plt.plot(new_x, result.residual, '-')
+            frame2.set_ylabel('$Residual$')
+
 
     plt.show()

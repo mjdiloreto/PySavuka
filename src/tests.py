@@ -111,6 +111,18 @@ class TestPysavuka(unittest.TestCase):
         s.scale_buffer(2, 5)
         s.pow_buffer(3, 2)
 
+    def test_range_string_to_tuple(self):
+        self.assertEqual(utils.range_to_tuple("(1)"), (1,))
+        self.assertEqual(utils.range_to_tuple("(1-2)"), (1, 2))
+        self.assertEqual(utils.range_to_tuple("(1-3)"), (1, 2, 3))
+        self.assertEqual(utils.range_to_tuple("(1,2)"), (1, 2))
+        self.assertEqual(utils.range_to_tuple("(1,2,4)"), (1, 2, 4))
+        self.assertEqual(utils.range_to_tuple("(1,2,4-7)"),
+                         (1,2,4,5,6,7))
+        self.assertEqual(utils.range_to_tuple("(1,2,4-7,3,9-11)"),
+                         (1,2,4,5,6,7,3,9,10,11))
+
+
     def test_string_to_list(self):
         self.assertEqual(utils.string_to_index_list('0'), [0])
         self.assertEqual(utils.string_to_index_list('[1,2,3]'), [1, 2, 3])

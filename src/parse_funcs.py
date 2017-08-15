@@ -52,12 +52,15 @@ def parse(filepath, formstyle):
         # this can raise a NameError if the formstyle is undefined.
         buf = eval("parse_" + formstyle + "(filepath)")
 
-    assert isinstance(buf, buffer.Buffer), (
-        "The parsing function for type {0} does not return a instance of a "
-        "Buffer as defined in module buffer it currently returns {1}. You must "
-        "edit the parse_{0) function in pysavuka/src/parse_funcs module to "
-        "return a Buffer object.".format(formstyle)
-    )
+    try:
+        assert isinstance(buf, buffer.Buffer)
+    except AssertionError:
+        assert isinstance(buf, tuple), (
+            "The parsing function for type {0} does not return a instance of a "
+            "Buffer as defined in module buffer it currently returns {1}. "
+            "You must edit the parse_{0) function in pysavuka/src/parse_funcs "
+            "module to return a Buffer object.".format(formstyle)
+        )
 
     return buf
 
@@ -106,6 +109,69 @@ def parse_user_defined(file_, data_start, data_names, extra_dimensions, delimite
     return buffer.Buffer(data)
 
 
+def lines_to_list(lines, column, start=0, stop=0):
+    """Convert all the values in the given column from the lines into a
+    single list."""
+    if start == 0 and stop == 0:
+        return [utils.floatify(line[column]) for line in lines]
+    elif stop == 0:
+        return [utils.floatify(line[column]) for line in lines[start:]]
+    else:
+        assert start < stop, ("start({0}) must be less than stop({1})"
+                              "".format(start, stop))
+        return [utils.floatify(line[column]) for line in lines[start:stop]]
+
+
+def parse_v_vectors(file_):
+    split_lines = convert_lines_to_list(file_, ',')
+
+    # xs are the first column
+    xs = lines_to_list(split_lines, 0)
+    all_ys = []
+
+    # skip the first column, because it is x
+    for col in range(1, len(split_lines[0])):
+        y_vals = lines_to_list(split_lines, col)
+        all_ys.append(y_vals)
+
+    list_of_buffers = []
+    for i in range(len(all_ys)):
+        buf = {'dim0': buffer.Dimension(xs, 'x'),
+               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),  # TODO name
+               'file': file_,
+               'format': 'v_vector'}
+        buf = buffer.Buffer(buf)
+        list_of_buffers.append(buf)
+
+    return tuple(list_of_buffers)
+
+
+def parse_v(file_):
+    """Exactly the same as parse_v_vectors, but the first line is a header
+    for some reason and not actual data."""
+    split_lines = convert_lines_to_list(file_, ',')
+
+    # xs are the first column, get rid of first value
+    xs = lines_to_list(split_lines, 0, start=1)
+    all_ys = []
+
+    # skip the first column, because it is x
+    for col in range(1, len(split_lines[1])):
+        # get rid of first value in the column, it is a header
+        y_vals = lines_to_list(split_lines, col, start=1)
+        all_ys.append(y_vals)
+
+    list_of_buffers = []
+    for i in range(len(all_ys)):
+        buf = {'dim0': buffer.Dimension(xs, 'x'),
+               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),  # TODO name
+               'file': file_,
+               'format': 'v_vector'}
+        buf = buffer.Buffer(buf)
+        list_of_buffers.append(buf)
+
+    return tuple(list_of_buffers)
+
 
 def parse_example(files):
     """Parse the format specified by ../docs/xyexample1.txt
@@ -127,13 +193,11 @@ def parse_example(files):
         # a line is in fact an x value.
         xs = [utils.floatify(line[0]) for line in split_lines
               if utils.floatify(line[0]) is not None]
-        xs = np.asarray(xs)
 
         # We slice d according to the length of xs because that's where the data
         # begins. This assumes for every x value there is a y. Also don't need
         # to check for None since there shouldn't be any after all the data.
         ys = [utils.floatify(line[1]) for line in split_lines[-len(xs):]]
-        ys = np.asarray(ys)
 
         assert len(xs) == len(ys), ("The data couldn't be parsed to match x "
                                     "and y values. This is probably caused by "
@@ -169,10 +233,10 @@ def parse_applied_photophysics(files):
         split_lines = [re.split(',', line) for line in f]
         f.close()
 
-        xs = np.asarray([utils.floatify(line[0]) for line in split_lines
-                         if utils.floatify(line[0]) is not None])
+        xs = [utils.floatify(line[0]) for line in split_lines
+                         if utils.floatify(line[0]) is not None]
 
-        ys = np.asarray([utils.floatify(line[1]) for line in split_lines[-len(xs):]])
+        ys = [utils.floatify(line[1]) for line in split_lines[-len(xs):]]
 
         assert len(xs) == len(ys), ("The data couldn't be parsed to match x "
                                     "and y values. This is probably caused by "

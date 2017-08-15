@@ -1,6 +1,7 @@
 import re
 import json
 import sys
+import traceback
 
 from collections import Iterable
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -64,9 +65,33 @@ def intify(s):
     """Convert the string to an int, and return None if not possible."""
     try:
         return int(s)
-    except ValueError:
+    except (ValueError, SyntaxError, TypeError):
         return
 
+def range_to_tuple(s):
+    """Convert a string in the form (int, int, int-int, int) to a tuple
+    containing all values in the tuple AND in the range int-int."""
+    # This check is vital. If it is not here, plain integers are converted to tuples,
+    # so it would be impossible to pass savuka an integer.
+    if not s.startswith("("):
+        raise TypeError("Ranges must start with parens")
+
+    # make a list of the values in the tuple, getting rid of leading and
+    # trailing parenthesis.
+    all_vals = [x for x in re.split(",|\(|\)", s) if x != '']
+    # convert int-int to a tuple of ints in the range, leave single ints alone
+    final = []
+    for val in all_vals:
+        x = rangeify(val)
+        if x is not None:
+            final.extend(x)
+        else:
+            final.append(intify(val))
+
+    if not final: # User gave no arguments. final is ()
+        raise TypeError("No arguments given to range_to_tuple")
+
+    return tuple(final)
 
 def rangeify(s):
     """Convert <int1-int2> into [int1, int1.1, int1.2, int1.3, ..., int2], and
@@ -113,12 +138,14 @@ def string_to_index_list(s):
 
 def eval_string(string):
     """return the proper python type of the object represented by the string,
-    if it is in fact a string."""
-    try:
-        a = eval(string)
-        return a
-    except (TypeError, NameError, SyntaxError):  # if it really is a string after all
-        return string
+    if it is in fact a string. Also convert things in 'range' syntax to tuples"""
+    try:  # it might be a 'range'. Have to check this first.
+        return range_to_tuple(string)
+    except (TypeError, NameError, SyntaxError):
+        try:
+            return eval(string)
+        except (TypeError, NameError, SyntaxError):  # if it really is a string after all
+            return string
 
 
 def eval_string_list(l):
@@ -142,7 +169,11 @@ def parse_options(line):
        kwargs = {option: yes, option2: no}
 
     All entries are converted to their proper python types as well.
-    i.e. 0 is int(0) not '0'
+    i.e. 0 is int(0) not '0'.
+
+    Also! convert things in the 'range' syntax, i.e. (int,int,int-int,int)
+    to a tuple containing all numbers in the range.
+    See utils.range_to_tuple
     """
 
     # anything before the first option will simply be an argument.
@@ -159,7 +190,9 @@ def parse_options(line):
             kwargs[opt] = []
         # Have we still not seen an option?
         elif add_to_args:
-            args.append(eval_string(x))
+            evaluated = eval_string(x)
+            if evaluated:  # don't add '' (no arguments given)
+                args.append(evaluated)
         # match params to their given options
         else:
             kwargs[opt].append(eval_string(x))
@@ -235,4 +268,18 @@ def check_input(exceptions_and_params={}):
         return wrapper
 
     return decorator
+
+
+def except_all(f):
+    """wrapper for cmd.Cmd methods that keeps the program running,
+     in spite of errors"""
+
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except:  # except any error that might occur
+            # print the error, keeping program open
+            traceback.print_exc(file=sys.stdout)
+
+    return wrapper
 

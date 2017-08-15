@@ -77,15 +77,22 @@ class Savuka:
         # parse the file according to the formstyle specified by the user
         data_dict = parse_funcs.parse(filepath, formstyle)
 
-        # The hash value of the buffer must be unique, so this simple algorithm
-        # ensures that no buffer in self will have hash collisions with others.
-        data_dict['hash'] = len(self) + 1
+        # some parse_funcs return many Buffers
+        if isinstance(data_dict, tuple):
+            for buf in data_dict:
+                buf['hash'] = len(self) + 1
+                self.data.append(buf)
+                print("\nSavuka read in the following data:\n" + str(buf))
+        else:
+            # The hash value of the buffer must be unique, so this simple algorithm
+            # ensures that no buffer in self will have hash collisions with others.
+            data_dict['hash'] = len(self) + 1
 
-        # add the parsed data to the list
-        self.data.append(data_dict)
+            # add the parsed data to the list
+            self.data.append(data_dict)
 
-        # show the user the x and y values they parsed in
-        print("\nSavuka read in the following data:\n" + str(data_dict))
+            # show the user the x and y values they parsed in
+            print("\nSavuka read in the following data:\n" + str(data_dict))
 
     def num_buffers(self):
         return len(self)
@@ -125,8 +132,7 @@ class Savuka:
             b = (self.get_buffer(x) for x in buf_range)
             return b
         elif isinstance(buf_range, tuple):
-            bufs = (self.get_buffer(x) for x in range(buf_range[0],
-                                                      buf_range[1] + 1))
+            bufs = (self.get_buffer(x) for x in buf_range)
             return bufs
         elif isinstance(buf_range, list):
             bufs = (self.get_buffer(x) for x in buf_range)
@@ -243,10 +249,10 @@ class Savuka:
         if isinstance(idx, int):
             results = fit.fit(self.get_ys(idx), model, self.get_xs(idx), **kwargs)
         elif isinstance(idx, tuple):
-            ys = [self.get_ys(i) for i in idx]
-            ys = np.asarray(ys)
+            data = np.asarray([{'x': self.get_xs(i),
+                              'y': self.get_ys(i)} for i in idx])
             # TODO figure out what x coordinate should be. Should we just use the first set, assuming consistency? Should we force consistency? Should we interpolate and prompt?
-            results = fit.fit(ys, model, self.get_xs(idx[0]), **kwargs)
+            results = fit.fit(data, model, **kwargs)
 
         fit.report_result(results[0])
         fit.plot_result(*results)

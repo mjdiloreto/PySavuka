@@ -88,7 +88,7 @@ class CommandLine(cmd.Cmd):
                     newformstyle = input(
                         "\nThe specified format [{0}] is unsupported,"
                         " enter a new one: ".format(formstyle))
-                    return self.read_help(filepaths, newformstyle)
+                    return read_help(filepaths, newformstyle)
 
         filepaths = utils.ask_for_files()
         if filepaths is not "":
@@ -96,7 +96,7 @@ class CommandLine(cmd.Cmd):
             return read_help(filepaths, formstyle)
 
     @plot_funcs.show_after_completion
-    @utils.check_input(exceptions_and_params={})
+    @utils.except_all
     def do_plot(self, line):
         """usage: plot |
             plot <python style list with no spaces, eg [1,2,3]>
@@ -106,15 +106,14 @@ class CommandLine(cmd.Cmd):
 
             plots the buffers specified by the given ranges (either integers
             or python tuples)."""
-        args = re.split("\s", line)
+        args, kwargs = utils.parse_options(line)
         if line is '':
             # default behavior is to plot everything in separate windows.
             self.savuka.plot_buffers(range(len(self.savuka)))
         elif '-s' in args:
             self.savuka.plot_superimposed(utils.string_to_index_list(args[0]))
         else:
-            self.savuka.plot_buffers(utils.string_to_index_list(args[0]))
-            print(utils.string_to_index_list(args[0]))
+            self.savuka.plot_buffers(args[0])
         '''else:
             # spaces not preceded by commas are used to break up arguments.
             # '(0, 1)' should be represented as '(0, 1)' not '(0,' and '1)'
@@ -259,7 +258,7 @@ class CommandLine(cmd.Cmd):
             None
         """
         files = utils.ask_for_files()
-        cols = utils.intify(input("How many columns?: "))
+        cols = utils.intify(input("How many columns total?: "))
         data_start = utils.intify(input("What line does data "
                             "start on (starting from 0)?: "))
         data_names = []
@@ -313,6 +312,7 @@ class CommandLine(cmd.Cmd):
         """
         print("".join(models.get_helps(line)))
 
+    @utils.except_all
     def do_fit(self, line):
         # TODO let user redo a fit. Stop calling other methods from this. just save model, fit, result, as attributes.
         """Fit the data from the given buffer index to the given model.
@@ -325,6 +325,9 @@ class CommandLine(cmd.Cmd):
                 name: string
                     The name of the model as specified in models.py"""
         args, kwargs = utils.parse_options(line)
+        if len(args) < 1 or len(kwargs) < 1:
+            print(self.do_help("fit"))
+
         if self.params is None:  # initialize params first
             # make parameters for a single buffer
             if isinstance(args[0], int):
@@ -335,25 +338,17 @@ class CommandLine(cmd.Cmd):
                 # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
                 num_bufs = len(args[0])
 
-            self.do_pd("{0} {1}".format(num_bufs, args[1]))
+            self.do_parameters("{0} {1}".format(num_bufs, args[1]))
             self.do_fit(line)
         else:
             kwargs['params'] = self.params
             self.savuka.fit(*args, **kwargs)
 
-    def do_dr(self, line):
+    def dr(self, file_, format):
         """Read in an example dataset."""
-        if line == 'xy1':
-            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample1.txt",
-                             "example")
-        elif line == 'xy4':
-            self.savuka.read(
-                r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\xyexample4.txt",
-                "example")
-        elif line == 'photo':
-            self.savuka.read(r"C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\applied-photophysics-stopped-flow-data\R9.csv", "photo")
+        self.savuka.read(file_, format)
 
-    def do_pd(self, line):
+    def do_parameters(self, line):
         """Set the parameters for fitting.
         Usage:
             pd <number of buffers> <model>
@@ -368,7 +363,7 @@ class CommandLine(cmd.Cmd):
         args, kwargs = utils.parse_options(line)
 
         if not line:  # user didn't provide necessary options
-            print(self.do_help("pd"))
+            print(self.do_help("parameters"))
             return
 
         num_bufs = args[0]
@@ -377,7 +372,7 @@ class CommandLine(cmd.Cmd):
         default_params = params.create_default_params(model)
         if self.params is None:  # set the initial guesses
             self.params = default_params
-            self.do_pd('{0}'.format(line))  # rerun with new params
+            self.do_parameters('{0}'.format(line))  # rerun with new params
         else:
             self.params = params.main(num_bufs, self.params)
 
@@ -409,10 +404,21 @@ class CommandLine(cmd.Cmd):
             'gauss_test')
 
     def do_debug(self, line):
-        self.do_dr('xy1')
-        self.do_dr('xy4')
+        self.dr(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv',
+                   'v')
+        self.dr(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
+            'v_vectors')
         # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
-        self.do_fit('(0,1) gauss')
+        self.do_fit('(28,29,30) two_state')
+
+    @utils.except_all
+    def do_check(self, line):
+        args, kwargs = utils.parse_options(line)
+        print("args: {0}".format(args))
+        print("kwargs: {0}".format(kwargs))
+
+
+
 
 
 def main():
