@@ -5,6 +5,23 @@ from src import utils
 
 import matplotlib.pyplot as plt
 
+# GLOBALS
+#########
+
+# Pyplot uses numbers for the figures. It is recommended to use 3-digit figure
+# numbers, and many people start with 121, for some reason.
+FIG_NUMBER = 121
+
+def get_fig_number():
+    """Return the current value of FIG_NUMBER and increment it by one,
+    to guarantee unique plots."""
+    global FIG_NUMBER
+
+    num = FIG_NUMBER
+    FIG_NUMBER += 1
+
+    return num
+
 
 def show_after_completion(f):
     """Decorator for functions/Savuka methods which should display plots
@@ -24,20 +41,24 @@ def show_after_completion(f):
     return wrapper
 
 
-def plot_xy(*args, **kwargs):
+def plot_xy(x, y, x_label='x', y_label='y'):
+    """Plot x values against y values, whatever they may be.
+    Parameters
+    ----------
+        x: np.ndarray
+            x values to be plot
+        y: np.ndarray
+            y values to be plot
+        x_label: string
+            label for x axis
+        y_label: string
+            label for y axis
+            """
+    fig = plt.figure(get_fig_number())
+    plt.plot(x, y)
 
-    new_args = (eval(arg) for arg in args)
-    new_kwargs = {k: eval(v) for k, v in kwargs.items()}
+    return fig
 
-    _plot_xy(*new_args, **new_kwargs)
-
-
-def _plot_xy(xdata, ydata, **kwargs):
-    if kwargs:
-        plt.plot(xdata, kwargs['y'])
-    else:
-        plt.plot(xdata, ydata)
-    plt.show()
 
 
 def plot_buffer(buf):
@@ -46,8 +67,8 @@ def plot_buffer(buf):
     idx will result in overwriting of previously queued data."""
     try:
         print("\nplotting buffer(s): {0}".format(buf))
-        plt.figure(buf['hash'])
-        plt.plot(buf.get_xs(), buf.get_ys())
+        plt.figure(get_fig_number())
+        plt.plot(buf.get_xs(), buf.get_ys(), 'o')
     except IndexError:
         print("There is no buffer at"
               " the given index: {0}".format(buf))
@@ -69,7 +90,7 @@ def plot_superimposed(*args):
 
 def plot_superimposed1(sav, buf_list):
     # Figure number unique to this function. Only one superimposed plot at once.
-    plt.figure(999)
+    plt.figure(get_fig_number())
 
     # add the buffers associated with the arguments to the list.
     bufs = []
@@ -95,6 +116,23 @@ def plot_superimposed1(sav, buf_list):
     ys = [sav.get_ys(x) for x in bufs]
     vals = [val for x in zip(xs, ys) for val in x]
     plt.plot(*vals)
+
+
+def plot_with_residuals(x, y, fitted_y, resids):
+    """Plot the original y values, the y values of the model given fit
+    parameters, and the residuals against x."""
+    fig = plt.figure(get_fig_number())
+    frame1 = fig.add_axes((.1,.3,.8,.6))
+    plt.plot(x, y, 'o', x, fitted_y, '-')
+
+    frame2 = fig.add_axes((.1, .1, .8, .2))
+
+    plt.plot(x, resids, '-')
+    frame2.set_ylabel('$Residual$', fontsize=14)
+
+    # This is for any sort of plot manipulation after it is made. Future
+    return fig
+
 
 
 

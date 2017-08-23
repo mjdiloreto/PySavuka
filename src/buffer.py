@@ -18,11 +18,11 @@ class Dimension(object):
         return "(" + self.name + ", " + str(self.data) + ")\n"
 
     def __init__(self, data=None, name=None):
-        self.data = np.asarray(data) if data is not None else np.asarray([])
+        self.data = np.asarray(data, dtype=np.float64) if data is not None else np.asarray([])
         self.name = name if name is not None else ''
 
     def set_data(self, new_data):
-        self.data = np.asarray(new_data)
+        self.data = np.asarray(new_data, dtype=np.float64)
 
     def set_name(self, new_name):
         self.name = str(new_name)

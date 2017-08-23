@@ -328,27 +328,27 @@ class CommandLine(cmd.Cmd):
         if len(args) < 1 or len(kwargs) < 1:
             print(self.do_help("fit"))
 
-        if self.params is None:  # initialize params first
-            # make parameters for a single buffer
-            if isinstance(args[0], int):
-                # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
-                num_bufs = 1
-            # make parameters for multiple buffers.
-            elif isinstance(args[0], tuple):
-                # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
-                num_bufs = len(args[0])
+        # make parameters for a single buffer
+        if isinstance(args[0], int):
+            # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
+            num_bufs = 1
+        # make parameters for multiple buffers.
+        elif isinstance(args[0], tuple):
+            # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
+            num_bufs = len(args[0])
 
-            self.do_parameters("{0} {1}".format(num_bufs, args[1]))
-            self.do_fit(line)
-        else:
-            kwargs['params'] = self.params
-            self.savuka.fit(*args, **kwargs)
+        self.do_parameters("{0} {1}".format(num_bufs, args[1]))
+        kwargs['params'] = self.params
+        self.savuka.fit(*args, **kwargs)
 
     def dr(self, file_, format):
         """Read in an example dataset."""
         self.savuka.read(file_, format)
 
-    def do_parameters(self, line):
+    def do_clear(self, line):
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+    def do_parameters(self, line): # TODO abstract the logic and call that function here and in do_fit
         """Set the parameters for fitting.
         Usage:
             pd <number of buffers> <model>
@@ -370,11 +370,7 @@ class CommandLine(cmd.Cmd):
         model = args[1]
         model = models.get_models(model)  # convert string to function
         default_params = params.create_default_params(model)
-        if self.params is None:  # set the initial guesses
-            self.params = default_params
-            self.do_parameters('{0}'.format(line))  # rerun with new params
-        else:
-            self.params = params.main(num_bufs, self.params)
+        self.params = params.main(num_bufs, default_params)
 
     def do_fit_result(self, line):
         """If we have run a fit, print its results"""
@@ -410,13 +406,30 @@ class CommandLine(cmd.Cmd):
             'v_vectors')
         # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
         self.do_fit('(28,29,30) two_state')
+        self.do_chi_error('deltag')
 
     @utils.except_all
     def do_check(self, line):
-        args, kwargs = utils.parse_options(line)
-        print("args: {0}".format(args))
-        print("kwargs: {0}".format(kwargs))
+        self.dr(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
+            'v_vectors')
+        self.do_fit('(0,1,2) two_state')
 
+    def do_prove(self, line):
+        self.dr(
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
+            'v_vectors')
+        self.do_fit('(0,1,2) two_state')
+        self.do_fit('(0,1,2) two_state')
+
+    def do_chi_error(self, line):
+        args, kwargs = utils.parse_options(line)
+        # -p -param_name -param followed by the name will all work
+        param_name = utils.one_of(kwargs, 'param_name', 'param', 'p')
+        if param_name is None:
+            # default to whatever user typed in
+            param_name = args[0]
+        self.savuka.plot_x2(param_name, self.params)
 
 
 

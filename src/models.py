@@ -19,7 +19,7 @@ MODELS = {'linear': ['linear', 'line'],
 
 
 # CONSTANTS
-GAS_CONSTANT_KCAL = 0.0019872036
+GAS_CONSTANT_KCAL = 1.9872036
 
 
 def get_models(name=None):

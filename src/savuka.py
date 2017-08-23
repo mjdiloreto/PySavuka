@@ -5,9 +5,10 @@ user, and methods to analyze that data."""
 from src import parse_funcs
 from src import plot_funcs
 from src import fit
+from src import params
 import numpy as np
-from src import models
 
+import matplotlib.pyplot as plt
 def update_buffer(f):
     """Mutates the data in self.data according to buffer index/name and
     axis returned by the decorated function. The first argument after self
@@ -68,7 +69,13 @@ class Savuka:
 
         # a dictionary of name value pairs for labelling buffers as
         # buffername, buffer_range
+
+        # TODO any calculated value should be stored. Fit should be under 'fit', etc. do_plot should then parse through this based on user options. Ex. plot 0 -y fit
         self.attributes = {}
+
+        # store the data from whatever the last fit was.
+        # Allows for further analysis
+        self.last_fit_result = None
 
     def read(self, filepath, formstyle):
         """Parses the given file of the given format and adds its data to
@@ -80,14 +87,9 @@ class Savuka:
         # some parse_funcs return many Buffers
         if isinstance(data_dict, tuple):
             for buf in data_dict:
-                buf['hash'] = len(self) + 1
                 self.data.append(buf)
                 print("\nSavuka read in the following data:\n" + str(buf))
         else:
-            # The hash value of the buffer must be unique, so this simple algorithm
-            # ensures that no buffer in self will have hash collisions with others.
-            data_dict['hash'] = len(self) + 1
-
             # add the parsed data to the list
             self.data.append(data_dict)
 
@@ -233,10 +235,6 @@ class Savuka:
                                                    data_names, extra_dimensions,
                                                    delimiter)
 
-        # The hash value of the buffer must be unique, so this simple algorithm
-        # ensures that no buffer in self will have hash collisions with others.
-        data_dict['hash'] = len(self) + 1
-
         # add the parsed data to the list
         self.data.append(data_dict)
 
@@ -246,14 +244,52 @@ class Savuka:
     def fit(self, idx, model, **kwargs):
         """Fit the data from the buffer at idx to the model specified by the
         model argument."""
+        # TODO make x a 2D array or dictionary for each data set.
         if isinstance(idx, int):
-            results = fit.fit(self.get_ys(idx), model, self.get_xs(idx), **kwargs)
+            # wrap the y in another array, to replicate shape of multi-dataset array
+            result, data, x, model = fit.fit(np.asarray([self.get_ys(idx)]),
+                                             self.get_xs(idx),
+                                             model, **kwargs)
         elif isinstance(idx, tuple):
-            data = np.asarray([{'x': self.get_xs(i),
-                              'y': self.get_ys(i)} for i in idx])
-            # TODO figure out what x coordinate should be. Should we just use the first set, assuming consistency? Should we force consistency? Should we interpolate and prompt?
-            results = fit.fit(data, model, **kwargs)
+            x1 = self.get_xs(idx[0])  # only use 1 set of x values
+            data = []
+            for i in idx:
+                xs = self.get_xs(i)
+                ys = self.get_ys(i)
+                if len(xs) != len(x1):
+                    ys = np.interp(x1, xs, ys)
+                data.append(ys)
 
-        fit.report_result(results[0])
-        fit.plot_result(*results)
+            data = np.asarray(data)
+
+            result, data, x, model = fit.fit(data, x1, model, **kwargs)
+
+            # save it all for further analysis
+            self.last_fit_result = (result, data, x, model)
+
+        fit.report_result(result)
+
+        for i, y in enumerate(data):
+            plot_funcs.plot_with_residuals(x,
+                y,
+                fit.generate_dataset(result.params, i, x, model), # recalc model ys
+                fit.calc_resids(result.params, data, i, x, model)) # calc residuals (result.resid doesn't work)
+
+        plt.show()
+
+        # fit.plot_result(*results)
+
+    def plot_x2(self, param_name, parameters):
+        if self.last_fit_result is None:
+            print("You must fit some data first to analyze Chi^2")
+            return
+
+        result, data, x, model = self.last_fit_result
+
+        # generate the graph for the globally-fit data
+        param_space, chis = fit.generate_error_landscape(result, data, x,
+                                                         model, param_name)
+
+        plot_funcs.plot_xy(param_space, chis)
+        plt.show()
 

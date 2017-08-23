@@ -17,6 +17,7 @@ from src import parse_funcs
 from src import plot_funcs
 from src import utils
 from src import buffer
+from src import params
 
 
 class TestPysavuka(unittest.TestCase):
@@ -155,8 +156,33 @@ class TestPysavuka(unittest.TestCase):
         self.assertEqual(current_args, ['arg1', 'arg2'])
         self.assertEqual(current_kwargs, {'option': [0, 1.0], 'option2': []})
 
+    def test_deep_copy(self):
+        from lmfit import Parameter, Parameters
 
+        p = Parameters()
+        p1 = params.deep_copy(p)
 
+        def test_params_equal(p1, p2):
+            for name, param in p1.items():
+                p2_param = p2[name]
+                self.assertEqual(param.name, p2_param.name)
+                self.assertEqual(param.value, p2_param.value)
+                self.assertEqual(param.vary, p2_param.vary)
+                self.assertEqual(param.min, p2_param.min)
+                self.assertEqual(param.max, p2_param.max)
+
+        test_params_equal(p, p1)
+
+        p.add('name_0', 1.0)
+        p2 = params.deep_copy(p)
+
+        test_params_equal(p, p2)
+
+        p.add('name_1', 2.0)
+        p.add('name_2', 3.0, vary=False, min=-10.0, max=10.0)
+        p3 = params.deep_copy(p)
+
+        test_params_equal(p, p3)
 
     def debug_parse_funcs(self):
         s = savuka.Savuka()

@@ -207,8 +207,39 @@ def create_default_params(model):
     return pars
 
 
+def create_params_without_window(num_bufs, params):
+    app = QApplication(sys.argv)
+    ex = App(num_bufs, params)
+    return ex.createParams()
+
+
 def main(num_bufs, params):
     app = QApplication(sys.argv)
     ex = App(num_bufs, params)
     app.exec()
     return ex.createParams()
+
+
+def deep_copy(params):
+    """Given a Parameters object, return an identical Parameters object
+    containing Parameter objects with identical values to those in params.
+    In other words, duplicate the parameters object. Allows one to rerun fits
+    with new parameters without changing the old ones."""
+    p = Parameters()
+
+    for name, par in params.items():
+        p.add(name=par.name, value=par.value, vary=par.vary, min=par.min,
+              max=par.max, expr=par.expr, brute_step=par.brute_step)
+
+    return p
+
+
+def is_global(params):
+    """Returns true if the Parameters object links one or more parameters, false
+    otherwise"""
+    for name, param in params.items():
+        if param.expr in params:
+            return True
+
+    return False
+

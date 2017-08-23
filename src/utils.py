@@ -68,6 +68,16 @@ def intify(s):
     except (ValueError, SyntaxError, TypeError):
         return
 
+def one_of(dict, *args):
+    """Return the first value of the first arg that exists in the dict"""
+    ret = None
+    for arg in args:
+        try:
+            ret = dict[arg]
+        except KeyError:
+            pass
+    return ret
+
 def range_to_tuple(s):
     """Convert a string in the form (int, int, int-int, int) to a tuple
     containing all values in the tuple AND in the range int-int."""
