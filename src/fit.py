@@ -15,7 +15,8 @@ def generate_dataset(parameters, i, x, model):
     essential requirement that ALL Parameter names are in the form:
     name_i
     where name is the parameter name, and i is the number buffer that
-    it is tied to.
+    it is tied to. This is run thousands of times. If any optimization must be
+    done, it should be here.
 
     Parameters
     ----------
@@ -70,7 +71,8 @@ def calc_resids(parameters, data, i, x, model):
 def objective(parameters, x, data, model):  # TODO fine to make x have many xs
     """Calculate total residual for fits to either a single dataset or
     multiple datasets contained in a 2D array, and fit to the model. Used by
-    lmfit's minimization methods to calculate the fit.
+    lmfit's minimization methods to calculate the fit. This runs thousands of
+    times. If any optimization must be done, it should be here.
 
     Parameters
     ----------
@@ -92,7 +94,7 @@ def objective(parameters, x, data, model):  # TODO fine to make x have many xs
         """
     ndata = data.shape
     if len(data.shape) == 1:  # fit a single dataset
-        print("\n\n\n\n\n\You should never see this\n\n\n\n\n")
+        print("\n\n\n\n\nYou should never see this\n\n\n\n\n")
         resid = 0.0 * data[:]
         resid[:] = data[:] - generate_dataset(parameters, 0, x, model)
         return resid.flatten()
@@ -106,7 +108,7 @@ def objective(parameters, x, data, model):  # TODO fine to make x have many xs
         return resid.flatten()
 
 
-def fit(data, x, model, parameters):
+def fit(data, x, model, parameters, debug=False):
     """Fit the data [a 1-d array] to the model with the x axis [a 1-d array].
 
     Parameters
@@ -122,6 +124,9 @@ def fit(data, x, model, parameters):
         parameters: lmfit.Parameters
             OrderedDict of lmfit.Parameter objects that will be passed to
             the objective function to be dispatched to the model function.
+        debug: boolean
+            If true, fitting routine will print its values for parameters at
+            each iteration.
 
     Returns
     -------
@@ -144,14 +149,29 @@ def fit(data, x, model, parameters):
         model = models.get_models(model)
 
     # TODO if more than one model, join the models. If a buffer is not linked, take it out and fit separately. Ask Osman if this should be necessary.
+    if debug:
+        iter_cb = debug_fitting
+    else:
+        iter_cb = None
 
-    result = minimize(objective, parameters, args=(x, data, model))
+    result = minimize(objective, parameters, args=(x, data, model),
+                      iter_cb=iter_cb)
     return result, data, x, model
 
 
-def generate_error_landscape(result, data, x, model, param_name, nsamples=11,
+def debug_fitting(params, nfev, out, *args, **kwargs):
+    """Function to be called after each iteration of the minimization method
+    used by lmfit. Should reveal information about how parameter values are
+    changing after every iteration in the fitting routine. See
+    lmfit.Minimizer.__residual for more information."""
+    print("\nIteration {0}".format(nfev))
+    for name, param in params.items():
+        print("{0}\t{1}".format(name, param.value))
+
+
+def generate_error_landscape(result, data, x, model, param_name, nsamples=15,
                              plus_minus=0.2):
-    """Create a chi sq landscape of the global fit. Set the parameter for each
+    """Create a chi sq landscape of the result fit. Set the parameter for each
     dataset to a values between the true value plus or minus plus_minus, and
     redo the fit with the new fixed parameters. Should work for both
     linked(global) and unlinked parameters.
@@ -185,9 +205,10 @@ def generate_error_landscape(result, data, x, model, param_name, nsamples=11,
             at those specified in param_axis.
         """
 
-    # perturb fitted values to not create false minima.s
-    default_params = params.create_params_without_window(len(data),
-        params.create_default_params(model))
+    # perturb fitted values to not create false minima.
+    # default_params = params.create_params_without_window(len(data), model)
+    default_params = params.deep_copy(result.params)
+
 
     sample_spaces = []
     # loop through all the fitted data and generate parameter values to
@@ -205,13 +226,13 @@ def generate_error_landscape(result, data, x, model, param_name, nsamples=11,
 
     all_chis = []
     # create fits for each parameter value
-    for x in range(nsamples):
+    for a in range(nsamples):
         # change all the values of the parameters
         for i, sample_space in enumerate(sample_spaces):
             param_i = default_params["{0}_{1}".format(param_name, i)]
             # X^2 analysis doesn't make sense if parameter can vary from what we set it.
             param_i.vary = False
-            param_i.value = sample_space[x]
+            param_i.value = sample_space[a]
 
         # fit the data
         new_result, new_data, new_x, new_model = fit(data, x, model,

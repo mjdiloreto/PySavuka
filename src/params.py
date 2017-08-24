@@ -17,7 +17,7 @@ from PyQt5.QtCore import pyqtSlot
 
 
 class App(QWidget):
-    def __init__(self, num_bufs, params):
+    def __init__(self, num_bufs, model):
         super().__init__()
 
         # The number of buffers that should be fit to the model. Determines
@@ -25,7 +25,7 @@ class App(QWidget):
         self.num_bufs = num_bufs
 
         # Takes in and modifies the default Params item given by Model.make_params()
-        self.default_params = params
+        self.default_params = create_default_params(model)
 
         self.parameters = Parameters()
 
@@ -68,6 +68,7 @@ class App(QWidget):
         # Create table
         self.tableWidget = QTableWidget()
 
+        # Any changes have to be reflected in self.createParams
         column_headers = [
             'name', 'value', 'vary', 'min', 'max', 'expr',
             'brute_step', 'user_data', 'shared with buffer'
@@ -207,38 +208,42 @@ def create_default_params(model):
     return pars
 
 
-def create_params_without_window(num_bufs, params):
+def create_params_without_window(num_bufs, model):
     app = QApplication(sys.argv)
-    ex = App(num_bufs, params)
+    ex = App(num_bufs, model)
     return ex.createParams()
 
 
-def main(num_bufs, params):
+def main(num_bufs, model):
+    """Given the number of buffers (corresponds to the number of parameter
+    sets that should be created) and """
     app = QApplication(sys.argv)
-    ex = App(num_bufs, params)
+    ex = App(num_bufs, model)
     app.exec()
     return ex.createParams()
 
 
-def deep_copy(params):
+def deep_copy(parameters):
     """Given a Parameters object, return an identical Parameters object
     containing Parameter objects with identical values to those in params.
     In other words, duplicate the parameters object. Allows one to rerun fits
-    with new parameters without changing the old ones."""
+    with new parameters without changing the old ones.
+    """
     p = Parameters()
 
-    for name, par in params.items():
+    for name, par in parameters.items():
         p.add(name=par.name, value=par.value, vary=par.vary, min=par.min,
               max=par.max, expr=par.expr, brute_step=par.brute_step)
 
     return p
 
 
-def is_global(params):
-    """Returns true if the Parameters object links one or more parameters, false
-    otherwise"""
-    for name, param in params.items():
-        if param.expr in params:
+def is_global(parameters):
+    """Returns true if the Parameters object links at least one parameter, false
+    otherwise. O(n^2) complexity."""
+    for name, param in parameters.items():
+        # lmfit uses the name of another parameter to signify linked parameters.
+        if param.expr in parameters:
             return True
 
     return False

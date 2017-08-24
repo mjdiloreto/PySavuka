@@ -257,6 +257,7 @@ class Savuka:
                 xs = self.get_xs(i)
                 ys = self.get_ys(i)
                 if len(xs) != len(x1):
+                    print("Interpolating y values.")
                     ys = np.interp(x1, xs, ys)
                 data.append(ys)
 

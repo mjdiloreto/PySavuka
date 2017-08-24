@@ -338,7 +338,7 @@ class CommandLine(cmd.Cmd):
             num_bufs = len(args[0])
 
         self.do_parameters("{0} {1}".format(num_bufs, args[1]))
-        kwargs['params'] = self.params
+        kwargs['parameters'] = self.params
         self.savuka.fit(*args, **kwargs)
 
     def dr(self, file_, format):
@@ -369,8 +369,7 @@ class CommandLine(cmd.Cmd):
         num_bufs = args[0]
         model = args[1]
         model = models.get_models(model)  # convert string to function
-        default_params = params.create_default_params(model)
-        self.params = params.main(num_bufs, default_params)
+        self.params = params.main(num_bufs, model)
 
     def do_fit_result(self, line):
         """If we have run a fit, print its results"""
@@ -408,12 +407,12 @@ class CommandLine(cmd.Cmd):
         self.do_fit('(28,29,30) two_state')
         self.do_chi_error('deltag')
 
-    @utils.except_all
     def do_check(self, line):
         self.dr(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
-            'v_vectors')
-        self.do_fit('(0,1,2) two_state')
+            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_1.csv',
+        'gauss_test')
+        self.do_fit('(0) gauss')
+        # self.savuka.debug_error('cen', self.params)
 
     def do_prove(self, line):
         self.dr(
@@ -430,8 +429,6 @@ class CommandLine(cmd.Cmd):
             # default to whatever user typed in
             param_name = args[0]
         self.savuka.plot_x2(param_name, self.params)
-
-
 
 
 def main():

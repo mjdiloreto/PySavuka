@@ -1,7 +1,7 @@
 PySavuka
 ########
 
-PySavuka is a complete re-design of Savuka - a general purpose global analysis program. The program is implemented in python 3 and designed to be used on any machine with a python interpreter. To read more about the original Savuka program, visit http://www.osmanbilsel.net/software/savuka
+PySavuka is a complete re-design of Savuka - a general purpose global analysis program, originally written in FORTRAN in the 1980s. The program is implemented in python 3 and designed to be used on any machine with a python interpreter. To read more about the original Savuka program, visit http://www.osmanbilsel.net/software/savuka
 
 
 Installation
@@ -27,6 +27,8 @@ To use the program, use the pysavuka command in terminal from any directory.
     $ pysavuka
 
 
+Installation without Anaconda
+=============================
 It is also possible to download the necessary packages in the Anaconda libraries manually.
 First, download and install:
     `numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy>`_.
