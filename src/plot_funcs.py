@@ -23,22 +23,10 @@ def get_fig_number():
     return num
 
 
-def show_after_completion(f):
-    """Decorator for functions/Savuka methods which should display plots
-    once they have been staged. None of the functions in this module
-    (plot_funcs.py) should call 'plt.show()'
-
-    Do not try to concurrently plot data and continue execution of program.
-    Because matplotlib is not threadsafe, there will be a huge workaround
-    involving the multiprocessing module. This means you must close all plots
-    before doing anything with the Savuka program."""
-
-    def wrapper(self, *args, **kwargs):
-
-        f(self, *args, **kwargs)
-        plt.show()
-
-    return wrapper
+def show():
+    """Wrap matplotlib. Useful for more advanced plotting which
+    hasn't been implemented"""
+    plt.show()
 
 
 def plot_xy(x, y, x_label='x', y_label='y'):

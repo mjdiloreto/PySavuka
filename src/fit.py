@@ -108,7 +108,7 @@ def objective(parameters, x, data, model):  # TODO fine to make x have many xs
         return resid.flatten()
 
 
-def fit(data, x, model, parameters, debug=False):
+def fit(data, x, model, parameters, debug=False, **kwargs):
     """Fit the data [a 1-d array] to the model with the x axis [a 1-d array].
 
     Parameters
@@ -155,7 +155,7 @@ def fit(data, x, model, parameters, debug=False):
         iter_cb = None
 
     result = minimize(objective, parameters, args=(x, data, model),
-                      iter_cb=iter_cb)
+                      iter_cb=iter_cb, **kwargs)
     return result, data, x, model
 
 
@@ -170,7 +170,7 @@ def debug_fitting(params, nfev, out, *args, **kwargs):
 
 
 def generate_error_landscape(result, data, x, model, param_name, nsamples=15,
-                             plus_minus=0.2):
+                             plus_minus=0.2, debug=False, **kwargs):
     """Create a chi sq landscape of the result fit. Set the parameter for each
     dataset to a values between the true value plus or minus plus_minus, and
     redo the fit with the new fixed parameters. Should work for both
@@ -195,6 +195,8 @@ def generate_error_landscape(result, data, x, model, param_name, nsamples=15,
         plus_minus: float
             percentage value representing how far from the true value of param
             you should vary in the X^2 analysis.
+        debug: bool
+            Whether each fit should print its results. Default False.
 
     Returns
     -------
@@ -239,7 +241,9 @@ def generate_error_landscape(result, data, x, model, param_name, nsamples=15,
                                                      default_params)
 
         all_chis.append(new_result.redchi)
-        report_result(new_result)
+
+        if debug:  # print out each fit result
+            report_result(new_result)
 
     # relative distance away from true fit X^2
     param_axis = np.linspace(-plus_minus, plus_minus, nsamples)

@@ -287,6 +287,8 @@ def except_all(f):
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
+        except SystemExit:  # do_quit command
+            sys.exit()
         except:  # except any error that might occur
             # print the error, keeping program open
             traceback.print_exc(file=sys.stdout)

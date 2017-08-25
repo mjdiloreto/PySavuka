@@ -39,26 +39,24 @@ class CommandLine(cmd.Cmd):
     def __init__(self):
         super(CommandLine, self).__init__()
         self.savuka = savuka.Savuka()
-        self.prompt = '(savuka)'
+        self.prompt = '(pysavuka)'
         self.params = None
-        self.fit = None  #TODO encapsulate fitting
 
     def postcmd(self, stop, line):
         # wait 1/10 second after each command. This fixes some weird
         # printing bugs when color is involved.
         sleep(0.1)
 
-    def do_quit(self, line):
+    def do_quit(self, line):  # TODO add save feature.
         """Exit savuka:
         Usage:
-            quit <option>
-
-        Options:
-            -s save state of the program.
-            -d save data loaded in
-            """
-        print("Exit")
+            quit
+        """
         sys.exit()
+
+    @utils.except_all
+    def onecmd(self, line):
+        return cmd.Cmd.onecmd(self, line)
 
     def do_help(self, arg):
         """Print help text in red. Kind of a hack since stderr is always red."""
@@ -95,8 +93,6 @@ class CommandLine(cmd.Cmd):
             formstyle = input("\nFormat of the file(s): ")
             return read_help(filepaths, formstyle)
 
-    @plot_funcs.show_after_completion
-    @utils.except_all
     def do_plot(self, line):
         """usage: plot |
             plot <python style list with no spaces, eg [1,2,3]>
@@ -114,24 +110,8 @@ class CommandLine(cmd.Cmd):
             self.savuka.plot_superimposed(utils.string_to_index_list(args[0]))
         else:
             self.savuka.plot_buffers(args[0])
-        '''else:
-            # spaces not preceded by commas are used to break up arguments.
-            # '(0, 1)' should be represented as '(0, 1)' not '(0,' and '1)'
-            for idx, x in enumerate(re.split("(?<!,)\s", line)):
-                try:
-                    # plot each one
-                    self.savuka.plot_buffers(x)
-                except NameError as e:
-                    # superimpose any plots after the '-s' or '--s' option
-                    if re.match("-+s", x) is not None:
-                        print("\nsuperimposing plots. "
-                              "{0}".format(re.split("(?<!,)\s",
-                                                    line)[idx+1:]))
-                        self.savuka.plot_superimposed(re.split("(?<!,)\s",
-                                                               line)[idx+1:])
-                        break
-                    else:
-                        self.default("{0}\n{1}".format(x, e))'''
+
+        plot_funcs.show()
 
     def do_svd(self, line):
         """usage: svd [file path] [# of spectra]
@@ -158,8 +138,6 @@ class CommandLine(cmd.Cmd):
 
         print("".join(formats))
 
-
-
     def do_load(self, line):
         """Load the file of the given format into the program.
 
@@ -173,9 +151,6 @@ class CommandLine(cmd.Cmd):
                 The format of the file. Specified in formats.json
                 or by using the formats command."""
 
-        @utils.check_input(exceptions_and_params={FileNotFoundError: 0,
-                                                  SyntaxError: 1,
-                                                  NameError: 1})
         def load_help(filepath, formstyle):
             self.savuka.read(filepath, formstyle)
 
@@ -187,7 +162,6 @@ class CommandLine(cmd.Cmd):
             parsed = cmd.Cmd.parseline(self, line)
             return load_help(parsed[0], parsed[1])
 
-    @utils.check_input(exceptions_and_params={})
     def do_print(self, line):
         """Display the data contents of the files read into the program.
         Usage:
@@ -199,7 +173,6 @@ class CommandLine(cmd.Cmd):
             print(self.savuka)
             # Todo make line params specify buffer indices and names to print
 
-    @utils.check_input(exceptions_and_params={})
     def do_shift(self, line):
         """Add the given amount to all y values of the given buffer.
 
@@ -215,8 +188,8 @@ class CommandLine(cmd.Cmd):
         args = utils.parseline(line)
         self.savuka.shift_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
-    @utils.check_input(exceptions_and_params={})
     def do_scale(self, line):
+        # TODO add option to scale fit by typing fit after command
         """Multiply all y values in a buffer by the given scalar.
 
         Usage:
@@ -230,7 +203,6 @@ class CommandLine(cmd.Cmd):
         args = utils.parseline(line)
         self.savuka.scale_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
-    @utils.check_input(exceptions_and_params={})
     def do_pow(self, line):
         """Raise all y values in a buffer to the given power.
 
@@ -312,48 +284,99 @@ class CommandLine(cmd.Cmd):
         """
         print("".join(models.get_helps(line)))
 
-    @utils.except_all
     def do_fit(self, line):
-        # TODO let user redo a fit. Stop calling other methods from this. just save model, fit, result, as attributes.
         """Fit the data from the given buffer index to the given model.
-        usage:
-            fit <buffer index> -model <name>
+        Usage:
+            fit <buffer index> <model name> -keyword <keyword value>...
 
-            options:
-                buffer index: int OR tuple(no spaces, e.g. (0,1,2))
-                    What buffers should be fit to the model
-                name: string
-                    The name of the model as specified in models.py"""
+        Arguments:
+            buffer index: int OR tuple(no spaces, e.g. (0,1,2))
+                What buffers should be fit to the model
+            model name: string
+                The name of the model as specified in models.py
+
+        Keyword arguments:
+            method: str, optional
+                Name of the fitting method to use. Valid values are:
+                - `'leastsq'`: Levenberg-Marquardt (default)
+                - `'least_squares'`: Least-Squares minimization, using Trust Region Reflective method by default
+                - `'differential_evolution'`: differential evolution
+                - `'brute'`: brute force method
+                - '`nelder`': Nelder-Mead
+                - `'lbfgsb'`: L-BFGS-B
+                - `'powell'`: Powell
+                - `'cg'`: Conjugate-Gradient
+                - `'newton'`: Newton-CG
+                - `'cobyla'`: Cobyla
+                - `'tnc'`: Truncate Newton
+                - `'trust-ncg'`: Trust Newton-CGn
+                - `'dogleg'`: Dogleg
+                - `'slsqp'`: Sequential Linear Squares Programming
+            debug: bool, optional
+                When set to True, will output parameter values at each iteration
+                   of the fitting routine. Default is False.
+            scale_covar : bool, optional
+                Whether to automatically scale the covariance matrix (`leastsq` only).
+            nan_policy : str, optional
+                Specifies action if `userfcn` (or a Jacobian) returns NaN
+                values. One of:
+                    - 'raise' : a `ValueError` is raised
+                    - 'propagate' : the values returned from `userfcn` are un-altered
+                    - 'omit' : non-finite values are filtered
+            full_output : bool, optional
+                non-zero to return all optional outputs.
+            col_deriv : bool, optional
+                non-zero to specify that the Jacobian function computes derivatives
+                down the columns (faster, because there is no transpose operation).
+            ftol : float, optional
+                Relative error desired in the sum of squares.
+            xtol : float, optional
+                Relative error desired in the approximate solution.
+            gtol : float, optional
+                Orthogonality desired between the function vector and the columns of
+                the Jacobian.
+            maxfev : int, optional
+                The maximum number of calls to the function. If `Dfun` is provided
+                then the default `maxfev` is 100*(N+1) where N is the number of elements
+                in x0, otherwise the default `maxfev` is 200*(N+1).
+            epsfcn : float, optional
+                A variable used in determining a suitable step length for the forward-
+                difference approximation of the Jacobian.
+                Normally the actual step length will be sqrt(epsfcn)*x
+                If epsfcn is less than the machine precision, it is assumed that the
+                relative errors are of the order of the machine precision.
+            factor : float, optional
+                A parameter determining the initial step bound
+                (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
+            diag : sequence, optional
+                N positive entries that serve as a scale factors for the variables.
+                """
         args, kwargs = utils.parse_options(line)
-        if len(args) < 1 or len(kwargs) < 1:
+        print(args)
+        if len(args) != 2:
             print(self.do_help("fit"))
 
         # make parameters for a single buffer
         if isinstance(args[0], int):
-            # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
             num_bufs = 1
         # make parameters for multiple buffers.
         elif isinstance(args[0], tuple):
-            # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
             num_bufs = len(args[0])
 
         self.do_parameters("{0} {1}".format(num_bufs, args[1]))
         kwargs['parameters'] = self.params
         self.savuka.fit(*args, **kwargs)
 
-    def dr(self, file_, format):
-        """Read in an example dataset."""
-        self.savuka.read(file_, format)
-
     def do_clear(self, line):
+        """Clear the screen. Equivalent to cls on Windows and clear on Unix."""
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    def do_parameters(self, line): # TODO abstract the logic and call that function here and in do_fit
+    def do_parameters(self, line):
         """Set the parameters for fitting.
         Usage:
             pd <number of buffers> <model>
 
-        Options:
+        Arguments:
             number of buffers:
                 How many buffers should have parameters specified for the fit?
             model:
@@ -361,10 +384,8 @@ class CommandLine(cmd.Cmd):
                 models command
                 """
         args, kwargs = utils.parse_options(line)
-
-        if not line:  # user didn't provide necessary options
+        if len(args) != 2:  # user didn't provide necessary options
             print(self.do_help("parameters"))
-            return
 
         num_bufs = args[0]
         model = args[1]
@@ -373,62 +394,43 @@ class CommandLine(cmd.Cmd):
 
     def do_fit_result(self, line):
         """If we have run a fit, print its results"""
-        if isinstance(self.fit, fit.Fit):
-            self.fit.report_result()
-        else:
-            print(self.fit)
+        self.savuka.report_result()
 
     def do_fit_plot(self, line):
-        if isinstance(self.fit, fit.Fit):
-            self.fit.plot_result()
-
-    def do_rg(self, line):
-        self.savuka.read(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_0.csv',
-                         'gauss_test')
-        self.savuka.read(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_1.csv',
-            'gauss_test')
-        self.savuka.read(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_2.csv',
-            'gauss_test')
-        self.savuka.read(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_3.csv',
-            'gauss_test')
-        self.savuka.read(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_4.csv',
-            'gauss_test')
-
-    def do_debug(self, line):
-        self.dr(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv',
-                   'v')
-        self.dr(r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
-            'v_vectors')
-        # THIS DOESNT FOLLOW THE FORMAT SUGGESTED BY self.do_fit!
-        self.do_fit('(28,29,30) two_state')
-        self.do_chi_error('deltag')
-
-    def do_check(self, line):
-        self.dr(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\gauss_test_data\gauss_data_1.csv',
-        'gauss_test')
-        self.do_fit('(0) gauss')
-        # self.savuka.debug_error('cen', self.params)
-
-    def do_prove(self, line):
-        self.dr(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
-            'v_vectors')
-        self.do_fit('(0,1,2) two_state')
-        self.do_fit('(0,1,2) two_state')
+        """If we have run a fit, plot it"""
+        # TODO hook up with better plotting options from self.do_plot
+        self.savuka.plot_result()
 
     def do_chi_error(self, line):
+        """Generate a plot of chi-quare for fits perturbing the value of
+        parameter and not allowing it to vary during fitting. A curve of
+        chi-square should be produced, with the true best-fit value of param
+        as the minimum.
+        Usage:
+            chi_error <param name> -keyword <keyword value>...
+
+        Arguments:
+            param name: str
+                Name of the parameter to be varied, according to the model
+                as defined by the models command. The only variable in the
+                models that cannot be used is x.
+
+        Keyword arguments:
+            nsamples: int
+                how many values of param to take X^2 at. Odd number will
+                include true param value
+            plus_minus: float
+                percentage value representing how far from the true value of
+                param the value should vary in the X^2 analysis.
+            debug: bool
+                Whether each fit should print its results. Default False.
+
+            """
         args, kwargs = utils.parse_options(line)
-        # -p -param_name -param followed by the name will all work
-        param_name = utils.one_of(kwargs, 'param_name', 'param', 'p')
-        if param_name is None:
-            # default to whatever user typed in
-            param_name = args[0]
-        self.savuka.plot_x2(param_name, self.params)
+        if len(args) != 1:
+            print(self.do_help("chi_error"))
+
+        self.savuka.plot_x2(args[0], **kwargs)
 
 
 def main():

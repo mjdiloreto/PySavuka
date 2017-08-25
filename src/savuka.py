@@ -280,7 +280,7 @@ class Savuka:
 
         # fit.plot_result(*results)
 
-    def plot_x2(self, param_name, parameters):
+    def plot_x2(self, param_name, **kwargs):
         if self.last_fit_result is None:
             print("You must fit some data first to analyze Chi^2")
             return
@@ -289,7 +289,7 @@ class Savuka:
 
         # generate the graph for the globally-fit data
         param_space, chis = fit.generate_error_landscape(result, data, x,
-                                                         model, param_name)
+            model, param_name, **kwargs)
 
         plot_funcs.plot_xy(param_space, chis)
         plt.show()
