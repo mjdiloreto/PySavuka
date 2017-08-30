@@ -112,7 +112,21 @@ class TestPysavuka(unittest.TestCase):
         s.scale_buffer(2, 5)
         s.pow_buffer(3, 2)
 
+    def test_eval_string(self):
+        self.assertEqual(utils.eval_string("0"), 0)
+        self.assertEqual(utils.eval_string("(0)"), (0,))
+        self.assertEqual(utils.eval_string("(0,1,2)"), (0,1,2))
+        self.assertEqual(utils.eval_string("a"), "a")
+        self.assertEqual(utils.eval_string("1.0"), 1.0)
+        self.assertEqual(utils.eval_string("1.1"), 1.1)
+
     def test_range_string_to_tuple(self):
+        self.assertEqual(utils.range_to_tuple("(0)"), (0,))
+        with self.assertRaises(TypeError):
+            utils.range_to_tuple("0")
+        with self.assertRaises(TypeError):
+            utils.range_to_tuple("a")
+
         self.assertEqual(utils.range_to_tuple("(1)"), (1,))
         self.assertEqual(utils.range_to_tuple("(1-2)"), (1, 2))
         self.assertEqual(utils.range_to_tuple("(1-3)"), (1, 2, 3))
@@ -122,6 +136,7 @@ class TestPysavuka(unittest.TestCase):
                          (1,2,4,5,6,7))
         self.assertEqual(utils.range_to_tuple("(1,2,4-7,3,9-11)"),
                          (1,2,4,5,6,7,3,9,10,11))
+
 
 
     def test_string_to_list(self):
@@ -134,6 +149,18 @@ class TestPysavuka(unittest.TestCase):
 
         current_args, current_kwargs = po('arg1')
         self.assertEqual(current_args, ['arg1'])
+        self.assertEqual(current_kwargs, {})
+
+        current_args, current_kwargs = po('0')
+        self.assertEqual(current_args, [0])
+        self.assertEqual(current_kwargs, {})
+
+        current_args, current_kwargs = po('1.0')
+        self.assertEqual(current_args, [1.0])
+        self.assertEqual(current_kwargs, {})
+
+        current_args, current_kwargs = po('(0,1,2)')
+        self.assertEqual(current_args, [(0,1,2)])
         self.assertEqual(current_kwargs, {})
 
         current_args, current_kwargs = po('arg1 arg2')

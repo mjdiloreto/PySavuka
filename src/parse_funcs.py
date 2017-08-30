@@ -82,9 +82,11 @@ def convert_lines_to_list(file_, delimiter = ','):
     return split_lines
 
 
+def extract_column(split_lines, column, start):
+    return [utils.floatify(line[column]) for line in split_lines[start:]]
+
 def parse_user_defined(file_, data_start, data_names, extra_dimensions, delimiter):
-    """Prompts user for relevant information about the file, and returns a
-    Buffer object with the parsed data."""
+    """Parses the file using the information from the user in formats.json."""
     split_lines = convert_lines_to_list(file_, delimiter)
 
     # the actual thing we will return
@@ -114,6 +116,8 @@ def lines_to_list(lines, column, start=0, stop=0):
     single list."""
     if start == 0 and stop == 0:
         return [utils.floatify(line[column]) for line in lines]
+    elif start == 0:
+        return [utils.floatify(line[column]) for line in lines[:stop]]
     elif stop == 0:
         return [utils.floatify(line[column]) for line in lines[start:]]
     else:

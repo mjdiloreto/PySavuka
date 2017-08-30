@@ -75,7 +75,8 @@ class Savuka:
 
         # store the data from whatever the last fit was.
         # Allows for further analysis
-        self.last_fit_result = None
+        # in order: results, data, x arrays, models
+        self.fit_results = ([], [], [], [])
 
     def read(self, filepath, formstyle):
         """Parses the given file of the given format and adds its data to
@@ -130,7 +131,7 @@ class Savuka:
 
     def get_buffers(self, buf_range):
         if isinstance(buf_range, range):
-            # return a generator which yields the buffers. Usable as *bufs
+            # return a generator which yields the buffers.
             b = (self.get_buffer(x) for x in buf_range)
             return b
         elif isinstance(buf_range, tuple):
@@ -250,14 +251,32 @@ class Savuka:
             result, data, x, model = fit.fit(np.asarray([self.get_ys(idx)]),
                                              self.get_xs(idx),
                                              model, **kwargs)
+            self.append_results(result, data, x, model)
+            self.fit_result()
+            self.fit_plot()
         elif isinstance(idx, tuple):
+            # a series of non-global fits
+            if 'type' in kwargs and kwargs['type'] == 'independent':
+                # keep track of how many new fits, for plotting.
+                for i in idx:
+                    x = self.get_xs(i)
+                    y = np.asarray([self.get_ys(i)])
+                    result, data, x, model = fit.fit(y, x, model, **kwargs)
+                    self.append_results(result, data, x, model)
+                    self.fit_result()
+                    self.fit_plot()
+                return
+
             x1 = self.get_xs(idx[0])  # only use 1 set of x values
             data = []
             for i in idx:
                 xs = self.get_xs(i)
                 ys = self.get_ys(i)
                 if len(xs) != len(x1):
-                    print("Interpolating y values.")
+                    ok = input("Interpolating y values. X arrays do not match."
+                               "Continue? [y/n]: ")
+                    if ok not in {'y', 'Y', 'yes', 'Yes', 'YES'}:
+                        return
                     ys = np.interp(x1, xs, ys)
                 data.append(ys)
 
@@ -266,31 +285,64 @@ class Savuka:
             result, data, x, model = fit.fit(data, x1, model, **kwargs)
 
             # save it all for further analysis
-            self.last_fit_result = (result, data, x, model)
+            self.append_results(result, data, x, model)
+            self.fit_result()
+            self.plot_nth_fit()
 
-        fit.report_result(result)
+    def append_results(self, result, data, x, model):
+        """Add the new results to self.fit_results."""
+        self.fit_results[0].append(result)
+        self.fit_results[1].append(data)
+        self.fit_results[2].append(x)
+        self.fit_results[3].append(model)
 
-        for i, y in enumerate(data):
-            plot_funcs.plot_with_residuals(x,
-                y,
-                fit.generate_dataset(result.params, i, x, model), # recalc model ys
-                fit.calc_resids(result.params, data, i, x, model)) # calc residuals (result.resid doesn't work)
+    @property
+    def num_results(self):
+        """How many fits have been run?"""
+        return len(self.fit_results[0])
 
-        plt.show()
+    def get_nth_result(self, n=-1):
+        """Return the nth result, data, x, model from self.fit_results"""
+        results, data, xs, models = self.fit_results
+        if results:
+            result = results[n]
+            data = data[n]
+            x = xs[n]
+            model = models[n]
+            return result, data, x, model
+        # Proper signature for function (won't give an error when unpacking.
+        return None, None, None, None
 
-        # fit.plot_result(*results)
+    def plot_nth_fit(self, n=-1):
+        """Plot the nth fit that was performed. Default to the last one."""
+        result, data, x, model = self.get_nth_result(n)
+
+        if result:
+            for i, y in enumerate(data):
+                plot_funcs.plot_with_residuals(x, y,
+                    # recalc model ys
+                    fit.generate_dataset(result.params, i, x, model),
+                    # calc residuals (result.resid doesn't work)
+                    fit.calc_resids(result.params, data, i, x, model))
+
+
+    def fit_result(self, n=-1):
+        """Print out the results from the last fit. Defaults to last one."""
+        result, data, x, model = self.get_nth_result(n)
+        if result:  # Doesn't do anything if empty list.
+            # report the very newest fit result.
+            fit.report_result(result)
 
     def plot_x2(self, param_name, **kwargs):
-        if self.last_fit_result is None:
+        if self.fit_results is None:
             print("You must fit some data first to analyze Chi^2")
             return
 
-        result, data, x, model = self.last_fit_result
+        result, data, x, model = self.get_nth_result()
 
         # generate the graph for the globally-fit data
         param_space, chis = fit.generate_error_landscape(result, data, x,
             model, param_name, **kwargs)
 
         plot_funcs.plot_xy(param_space, chis)
-        plt.show()
 

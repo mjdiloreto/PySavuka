@@ -3,15 +3,17 @@ their parameters that will be used to fit whatever data they wish to the
 model specified."""
 
 
-from src.utils import eval_string
+from src.utils import eval_string, name_scheme_match
 
 import inspect
 import sys
+import re
 
 from lmfit import Model, Parameters, Parameter
 
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QWidget, QAction,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDesktopWidget)
+    QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDesktopWidget,
+    QMenuBar, QDialog)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot
 
@@ -42,9 +44,11 @@ class App(QWidget):
 
         self.createTable()
         self.createButton()
+        self.createMenu()
 
         # Add box layout, add table to box layout and add box layout to widget
         self.layout = QVBoxLayout()
+        self.layout.addWidget(self.menuBar)
         self.layout.addWidget(self.tableWidget)
         self.layout.addWidget(self.button)
         self.setLayout(self.layout)
@@ -53,6 +57,26 @@ class App(QWidget):
 
         # Show widget
         self.show()
+
+    def createMenu(self):
+        def add_action(menu, name, shortcut, status_tip, f):
+            b = QAction(QIcon(), name, self)
+            b.setShortcut(shortcut)
+            b.setStatusTip(status_tip)
+            b.triggered.connect(f)
+            menu.addAction(b)
+
+        self.menuBar = QMenuBar(self)
+        fileMenu = self.menuBar.addMenu('File')
+        editMenu = self.menuBar.addMenu('Edit')
+
+        add_action(fileMenu, 'Exit', 'Ctrl+Q', 'Exit application', self.close)
+        add_action(editMenu, 'Change all', 'Ctrl+E',
+                   'Change every buffer to have the same values.',
+                   self.createChangeMenu)
+
+    def createChangeMenu(self):
+        self.changeDialog= ChangeDialog(self)
 
     def createButton(self):
         self.button = QPushButton('Update Params', self)
@@ -142,6 +166,7 @@ class App(QWidget):
                 current_row += 1
 
         self.tableWidget.move(0, 0)
+        return self.tableWidget
 
     @pyqtSlot()
     def on_click(self):
@@ -199,6 +224,57 @@ class App(QWidget):
         return self.parameters
 
 
+
+class ChangeDialog(QMainWindow):
+    """If I knew more about PyQt5 Widget hierarchy I would have this inherit
+    from App, since the table logic will be the same, but I don't, so instead
+    a new App is created with new parameters."""
+    def __init__(self, parent):
+        super().__init__(parent=parent)
+
+        # get the current state of the Table with user input
+        # self.default_params = parent.createParams()
+        # We only want one set of options
+        # self.app = App(num_bufs=1, model=parent.model)
+
+        self.title = 'Enter your Params'
+        self.left = 0
+        self.top = 0
+        self.width = 500
+        self.height = 400
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+
+        self.button = self.createButton('Button1', 'first button')
+        # self.table = self.app.createTable()
+        self.layout = QVBoxLayout()
+        #self.layout.addWidget(self.table)
+        self.layout.addWidget(self.button)
+
+        self.setLayout(self.layout)
+
+        self.center()
+
+        # Show widget
+        self.show()
+
+    def center(self):
+        frameGm = self.frameGeometry()
+        centerPoint = QDesktopWidget().availableGeometry().center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
+
+    def createButton(self, name, tooltip):
+        button = QPushButton(name, self)
+        button.setToolTip(tooltip)
+        return button
+
+
+
+
 def create_default_params(model):
     """Create a set of parameters for the given model."""
 
@@ -248,3 +324,7 @@ def is_global(parameters):
 
     return False
 
+
+if __name__ == '__main__':
+    from src import models
+    main(2, models.gaussian_1d)

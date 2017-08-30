@@ -67,16 +67,18 @@ setup(
     test_suite='tests',
 )
 
-# as it turns out, downloading and installing external whl files is not trivial.
-"""if platform == 'win32':
+if platform == 'win32':
     try:
         import tkinter
     except ImportError:
         system("pip3 install tkinter")
+    except:
+        system("pip install tkinter")
         # download scipy from Gohlke's site and install
         # also download and install numpy+MKL
 
-    # https://stackoverflow.com/questions/7243750/download-file-from-web-in-python-3
+    # as it turns out, downloading and installing external whl files is not trivial.
+    """"# https://stackoverflow.com/questions/7243750/download-file-from-web-in-python-3
     import urllib.request
     import shutil
 
@@ -88,7 +90,7 @@ setup(
 
 
     get_from_url(r'www.lfd.uci.edu/~gohlke/pythonlibs/numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl',
-                 path.join(here, 'numpy_download.whl'))
+                 path.join(here, 'numpy_download.whl'))"""
 
 else:  # should work for unix and mac
-    system("sudo apt install python3-tk")"""
+    system("sudo apt install python3-tk")

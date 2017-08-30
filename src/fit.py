@@ -1,5 +1,6 @@
 from src import models
 from src import params
+from src.utils import name_scheme_match
 
 import re
 
@@ -32,10 +33,9 @@ def generate_dataset(parameters, i, x, model):
             The actual function used to calculate the fit.
     """
     # get all the parameters whose names end in the number i, and assign them
-    # to parameter names that do not end in i
+    # to the actual parameter names of the model, then run the model.
     parameters = {re.sub('_[0-9]*', '', k): v.value for k, v in parameters.items()
-                  if re.match('.*(?<=_){0}'.format(i), k) is not None
-                  and re.match('.*(?<=_){0}'.format(i), k).end() == len(k)}
+                  if name_scheme_match(k, i)}
 
     return model(x, **parameters)
 

@@ -35,10 +35,21 @@ def load_formats_from_json(file_):
 
 
 def save_formats_to_json(file_, name, obj):
+    """Save the new object to the json file under the given name. If the
+    name already exists, the old format will be overwritten. If obj is
+    None, the object will be deleted from the json file."""
     with open(file_, 'r') as f:
         # load in what already exists
         data = json.load(f)
         f.close()
+
+    if obj is None:
+        # delete the object from the dict.
+        try:
+            data.pop(name)
+        except KeyError:
+            print("No object with name [{0}] in file [{1}]")
+            return
 
     # assign the new object its name, overwrite if necessary
     data[name] = obj
@@ -103,8 +114,9 @@ def range_to_tuple(s):
 
     return tuple(final)
 
+
 def rangeify(s):
-    """Convert <int1-int2> into [int1, int1.1, int1.2, int1.3, ..., int2], and
+    """Convert 'int1-int2' into [int1, int1.1, int1.2, int1.3, ..., int2], and
     return None if not possible"""
     try:
         bounds = re.split("-", s)
@@ -201,13 +213,20 @@ def parse_options(line):
         # Have we still not seen an option?
         elif add_to_args:
             evaluated = eval_string(x)
-            if evaluated:  # don't add '' (no arguments given)
+            # don't add '' (no arguments given)
+            if evaluated is not None and evaluated is not '':
                 args.append(evaluated)
         # match params to their given options
         else:
             kwargs[opt].append(eval_string(x))
 
     return args, kwargs
+
+
+def name_scheme_match(name, idx):
+    """True if the name matches '_idx' exactly, otherwise false."""
+    return (re.match('.*(?<=_){0}'.format(idx), name) is not None and not
+            re.match('.*(?<=_){0}[0-9]+'.format(idx), name))
 
 
 def print_helps(mod):
