@@ -7,6 +7,7 @@ from src import utils
 from src import models
 from src import svd
 from src import params
+from src.parse_funcs import library_root, json_path
 from src import fit
 
 import cmd
@@ -16,11 +17,6 @@ import sys
 from sys import stderr, stdout
 from time import sleep
 import matplotlib.pyplot as plt
-
-# don't change the location of any files in this package.
-library_root = os.path.abspath(os.path.join(__file__, "../.."))
-
-json_path = os.path.join(library_root, r'docs/formats.json')
 
 
 class CommandLine(cmd.Cmd):
