@@ -4,7 +4,7 @@ PySavuka
 PySavuka is a complete re-design of Savuka - a general purpose global analysis program, originally written in FORTRAN in the 1980s. The program is implemented in python 3 and designed to be used on any machine with a python interpreter. To read more about the original Savuka program, visit http://www.osmanbilsel.net/software/savuka
 
 
-Installation
+Linux/mac Installation
 ============
 Installation has only been tested on Windows and Unix systems.
 
@@ -30,6 +30,26 @@ To use the program, use the pysavuka command in terminal from any directory.
 
 After following these instructions on Windows, it is possible to get an error message complaining that ``tkinter`` is not installed. All python versions since 3.1 have shipped with tkinter, but it is possible to not install it while setting up python. If you have this issue, you will have to `manually installed tkinter <http://www.tkdocs.com/tutorial/install.html#installwin>`_.
 
+Windows Installation
+====================
+Windows installation rely on `Anaconda 4.4.0 <https://www.continuum.io/downloads>`_ for numpy and scipy dependencies. If Anaconda is installed, follow the instructions for Unix installation above.
+
+If you do not have Anaconda installed, it is also possible to download the necessary packages in the Anaconda libraries manually.
+First, download:
+    `numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy>`_.
+Navigate to your Downloads folder, and run:
+.. code-block:: bash
+
+    $ pip install numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl
+
+It is important to make sure that you use this version of numpy, and not just the version downloaded by 'pip install numpy' because that will not include the Intel Math Kernal Library.
+Next, download and install:
+    `scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy>`_.
+.. code-block:: bash
+
+    $ pip install scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl
+
+You should then be able to clone this repository (see above), install it with pip, and use the pysavuka command
 
 Usage
 =====

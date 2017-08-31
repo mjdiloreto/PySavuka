@@ -27,8 +27,8 @@ win32_requirements = [
     'matplotlib',
     'PyQt5',
     'lmfit'
-    # 'numpy',  # installed from docs/windows_requires folder
-    # 'scipy'  # installed from docs/windows_requires folder
+    # 'numpy',  # must be installed manually (Don't go down this rabbit hole).
+    # 'scipy'  # must be installed manually (Don't go down this rabbit hole).
 ]
 
 test_requirements = [
@@ -71,20 +71,23 @@ class CustomInstallCommand(install):
     def windows_install(self):
         # Does not check for tkinter. Should be included in any new python
         # version though.
-
-        numpy_install = path.abspath(path.join(here,
-            r'docs/windows_requires/numpy-1.13.1+mkl-cp36-cp36m-win_amd64.whl'))
-        scipy_install = path.abspath(path.join(here,
-            r'docs/windows_requires/scipy-0.19.1-cp36-cp36m-win_amd64.whl'))
-
         try:
             import scipy
         except ImportError:
-            stdout.write("Installing numpy...\n")
-            system("{0} install \"{1}\"".format(self._pip, numpy_install))
-
-            stdout.write("Installing scipy...\n")
-            system("{0} install \"{1}\"".format(self._pip, scipy_install))
+            stdout.write("You must install "
+                         "numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl"
+                         "and scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl from "
+                         "http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy. "
+                         "Follow the instructions outlined in README.rst")
+            raise SystemExit
+        try:
+            import tkinter
+        except ImportError:
+            stdout.write("You must have tkinter installed. You can either "
+                         "reinstall Python 3.6.1, or follow the instructions at"
+                         " http://www.tkdocs.com/tutorial/install.html#installwin"
+                         "\n Link to the site is in README.rst.")
+            raise SystemExit
 
     def mac_install(self):
         # TODO add support for Mac. I (mjdiloreto@gmail.com) don't have an os to play with.
