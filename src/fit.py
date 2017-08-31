@@ -68,7 +68,7 @@ def calc_resids(parameters, data, i, x, model):
     return resid.flatten()
 
 
-def objective(parameters, x, data, model):  # TODO fine to make x have many xs
+def objective(parameters, x, data, model):
     """Calculate total residual for fits to either a single dataset or
     multiple datasets contained in a 2D array, and fit to the model. Used by
     lmfit's minimization methods to calculate the fit. This runs thousands of
@@ -148,7 +148,6 @@ def fit(data, x, model, parameters, debug=False, **kwargs):
     if isinstance(model, str):
         model = models.get_models(model)
 
-    # TODO if more than one model, join the models. If a buffer is not linked, take it out and fit separately. Ask Osman if this should be necessary.
     if debug:
         iter_cb = debug_fitting
     else:

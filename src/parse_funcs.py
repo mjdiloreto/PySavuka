@@ -141,7 +141,7 @@ def parse_v_vectors(file_):
     list_of_buffers = []
     for i in range(len(all_ys)):
         buf = {'dim0': buffer.Dimension(xs, 'x'),
-               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),  # TODO name
+               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),
                'file': file_,
                'format': 'v_vector'}
         buf = buffer.Buffer(buf)
@@ -168,7 +168,7 @@ def parse_v(file_):
     list_of_buffers = []
     for i in range(len(all_ys)):
         buf = {'dim0': buffer.Dimension(xs, 'x'),
-               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),  # TODO name
+               'dim1': buffer.Dimension(all_ys[i], 'decomposed'),
                'file': file_,
                'format': 'v_vector'}
         buf = buffer.Buffer(buf)

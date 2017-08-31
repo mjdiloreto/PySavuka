@@ -51,16 +51,18 @@ class Savuka:
     def __len__(self):
         return len(self.data)
 
-    def __repr__(self):
-        # representation of the data. Called with built-in print function
+    def print_buffers(self, start, stop, step):
         r = []
-        for i, buf in enumerate(self.data):
-            # TODO, print the attributes as {0}, if present. or organize by attribute
+        for i, buf in enumerate(self.data[start:stop:step]):
             r.append("buffer {0}:\n {1},\n\n".format(i, buf))
 
         # make the list a string following Google python style guidelines.
         rep = "".join(r[:-2])
         return "\n" + rep + "\n"
+
+    def __repr__(self):
+        # representation of the data. Called with built-in print function
+        return self.print_buffers(0, len(self), 1)
 
     def __init__(self):
         # a list of the dictionaries of Dimension objects and values specified
@@ -69,8 +71,6 @@ class Savuka:
 
         # a dictionary of name value pairs for labelling buffers as
         # buffername, buffer_range
-
-        # TODO any calculated value should be stored. Fit should be under 'fit', etc. do_plot should then parse through this based on user options. Ex. plot 0 -y fit
         self.attributes = {}
 
         # store the data from whatever the last fit was.
@@ -146,7 +146,6 @@ class Savuka:
             return b
 
     def get_xs(self, idx, start=0, end=0):
-        # TODO decide how to do this
         """returns the x values within the range of the given buffer."""
 
         buffer = self.data[idx]
@@ -163,7 +162,6 @@ class Savuka:
             return allys[start:end]
 
     def get_z(self, idx):
-        # TODO what about 4+ dimension data?
         """return the zingle z value for the buffer."""
         buffer = self.data[idx]
         return buffer.get('dim2')
@@ -178,8 +176,7 @@ class Savuka:
         b1 = self.get_buffer(buffer_index1)
         b2 = self.get_buffer(buffer_index2)
 
-        # interpolates the values of b2 based on the y vals of b1.
-        # Todo cubic spline interpolation. Include flag for doing interpolation
+        # interpolates (linear) the values of b2 based on the y vals of b1.
         add_to_b2 = np.interp(self.get_xs(b1), self.get_xs(b2), self.get_ys(b2))
 
         new_y = b2[2] + add_to_b2
@@ -214,7 +211,6 @@ class Savuka:
         self.update_buffers(buffer_index, new_buf, dim=dim)
 
     def pow_buffer(self, buffer_index, exp, dim='dim1'):
-        # TODO have an option to just show the new data, or to save it.
         buf = self.get_buffer(buffer_index).get_ys()
 
         new_buf = buf ** exp
@@ -277,6 +273,7 @@ class Savuka:
                                "Continue? [y/n]: ")
                     if ok not in {'y', 'Y', 'yes', 'Yes', 'YES'}:
                         return
+                    # linear interpolation of data sampled at proper x values.
                     ys = np.interp(x1, xs, ys)
                 data.append(ys)
 

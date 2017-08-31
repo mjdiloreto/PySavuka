@@ -32,7 +32,6 @@ class Dimension(object):
         self.data = self.data[start:stop:step]
 
     def append(self, val):
-        # TODO maybe have Dimension inherit from list and have an as_nparray method
         # val must be in list because that's how numpy appends.
         self.data = np.append(self.data, [val])
 
@@ -122,25 +121,19 @@ class Buffer(dict):
     def get_y_name(self):
         return self['dim1'].name
 
-    def add_to_x(self, data, interpolate=False):
+    def add_to_x(self, data):
         current_x = self['dim0'].data
         if isinstance(data, np.ndarray):
             if current_x.shape == data.shape:
                 self['dim0'].data += data
-            elif interpolate:
-                print("using cubic spline interpolation on data")
-                # TODO cubic spline interpolation
         elif isinstance(data, int):
             self['dim0'].data += data
 
-    def add_to_y(self, data, interpolate=False):
+    def add_to_y(self, data):
         current_y = self['dim1'].data
         if isinstance(data, np.ndarray):
             if current_y.shape == data.shape:
                 self['dim1'].data += data
-            elif interpolate:
-                print("using cubic spline interpolation on data")
-                # TODO cubic spline interpolation
         elif isinstance(data, int):
             self['dim1'].data += data
 

@@ -17,7 +17,6 @@ from sys import stderr, stdout
 from time import sleep
 import matplotlib.pyplot as plt
 
-# TODO organize methods alphabetically
 # don't change the location of any files in this package.
 library_root = os.path.abspath(os.path.join(__file__, "../.."))
 
@@ -39,17 +38,14 @@ class CommandLine(cmd.Cmd):
         self.prompt = '(pysavuka)'
         self.params = None
 
+    ####################
+    # OVERRIDE METHODS #
+    ####################
+
     def postcmd(self, stop, line):
         # wait 1/10 second after each command. This fixes some weird
         # printing bugs when color is involved.
         sleep(0.1)
-
-    def do_quit(self, line):  # TODO add save feature.
-        """Exit savuka:
-        Usage:
-            quit
-        """
-        sys.exit()
 
     @utils.except_all
     def onecmd(self, line):
@@ -63,6 +59,17 @@ class CommandLine(cmd.Cmd):
 
     def default(self, line):
         print("This command is unsupported: {0}".format(line))
+
+    def do_quit(self, line):  # TODO add save feature.
+        """Exit savuka:
+        Usage:
+            quit
+        """
+        sys.exit()
+
+    ################
+    # DATA PARSING #
+    ################
 
     def do_read(self, line):
         """user will be prompted to select file(s) and asked about the
@@ -90,51 +97,6 @@ class CommandLine(cmd.Cmd):
             formstyle = input("\nFormat of the file(s): ")
             return read_help(filepaths, formstyle)
 
-    def do_plot(self, line):
-        """usage: plot |
-            plot <python style list with no spaces, eg [1,2,3]>
-
-            OPTIONS:
-            -s      superimpose the plots
-
-            plots the buffers specified by the given ranges (either integers
-            or python tuples)."""
-        args, kwargs = utils.parse_options(line)
-        if line is '':
-            # default behavior is to plot everything in separate windows.
-            self.savuka.plot_buffers(range(len(self.savuka)))
-        elif '-s' in args:
-            self.savuka.plot_superimposed(utils.string_to_index_list(args[0]))
-        else:
-            self.savuka.plot_buffers(args[0])
-
-        plot_funcs.show()
-
-    def do_svd(self, line):
-        """usage: svd [file path] [# of spectra]
-        Singular value decomposition."""
-
-        return svd.svd()
-
-    def do_formats(self, line):
-        """List all currently defined formats for files."""
-        # get the dictionary of formats from formats.json
-        defined_formats = utils.load_formats_from_json(json_path)
-
-        formats = []
-
-        # iterate through the format names
-        for formstyle in defined_formats.keys():
-            name = "\n{0}:\n".format(formstyle)
-            # things like 'data_start, extra_dimensions, etc.)
-            desc = ["\t{0}\t{1}\n".format(k, v) for k, v
-                    in defined_formats[formstyle].items()]
-            desc = "".join(desc)  # make them all one string
-
-            formats.append(name + desc)
-
-        print("".join(formats))
-
     def do_load(self, line):
         """Load the file of the given format into the program.
 
@@ -159,16 +121,186 @@ class CommandLine(cmd.Cmd):
             parsed = cmd.Cmd.parseline(self, line)
             return load_help(parsed[0], parsed[1])
 
-    def do_print(self, line):
-        """Display the data contents of the files read into the program.
+    def do_formats(self, line):
+        """List all currently defined formats for files."""
+        # get the dictionary of formats from formats.json
+        defined_formats = utils.load_formats_from_json(json_path)
+
+        formats = []
+
+        # iterate through the format names
+        for formstyle in defined_formats.keys():
+            name = "\n{0}:\n".format(formstyle)
+            # things like 'data_start, extra_dimensions, etc.)
+            desc = ["\t{0}\t{1}\n".format(k, v) for k, v
+                    in defined_formats[formstyle].items()]
+            desc = "".join(desc)  # make them all one string
+
+            formats.append(name + desc)
+
+        print("".join(formats))
+
+    def do_add_format(self, line):
+        """Specify a file format and load in file(s) accordingly. Provides the
+        ability to save the format for future use using the read or load commands.
+
         Usage:
-            print
+            add_format
+
+        Parameters
+        ----------
+            None
+        """
+        messages = {"cols": "How many columns total?: ",
+                    "data_start": "What line does data start on "
+                                  "(starting from 0)?: ",
+                    "column_name": "What is the name of column {0}?: ",
+                    "n_extra": "How many other dimensions are there?: ",
+                    "v": "What line contains the data from extra "
+                         "dimension {0}? (starting from 0): "}
+        cols = self.ensure_input_type(None, (int,), utils.intify,
+                                      messages['cols'])
+
+        data_start = self.ensure_input_type(None, (int,), utils.intify,
+                                            messages['data_start'])
+
+        data_names = []
+        for x in range(cols):
+            # Don't need to type-match strings
+            column_name = self.ensure_input_type(None, (int,), utils.intify,
+                                                 messages['column_name'].format(
+                                                     x))
+
+            data_names.append(column_name)
+
+        n_extra = self.ensure_input_type(None, (int,), utils.intify,
+                                         messages['n_extra'])
+
+        extra_dimensions = {}
+        for x in range(n_extra):
+            v = self.ensure_input_type(None, (int,), utils.intify,
+                                       messages['v'].format(x))
+            k = input("What is the name of that dimension?: ")
+            extra_dimensions[k] = v
+
+        delimiter = input("What does the file use to separate values? "
+                          "[t for tab, s for space, or , for comma]: ")
+        # convert the answer into an escaped character
+        if delimiter == 't':
+            delimiter = '\t'
+        elif delimiter == 's':
+            delimiter = '\s'
+        elif delimiter == ',':
+            delimiter = ','
+        # otherwise leave it unchanged. Delimiter can be anything.
+
+        save_state = input("Would you like to save this as a permanent file"
+                           "format? [y/n]: ")
+
+        # Save the data in formats.json
+        name = input("What would you like to name the format?: ")
+
+        # Check the types of user input
+
+        utils.save_formats_to_json(json_path, name,
+                                   {
+                                       "data_start": data_start,
+                                       "data_names": data_names,
+                                   # reveals number of columns
+                                       "extra_dimensions": extra_dimensions,
+                                       "delimiter": delimiter
+                                   })
+
+    def do_delete_format(self, line):
+        """Delete the specified format from formats.json.
+        Usage:
+            delete_format <name_of_format>
+
+        Parameters
+        ----------
+            name of format: str
+                The format to be deleted from formats.json (in PySavuka/docs).
+        """
+        args, kwargs = utils.parse_options(line)
+
+        if not self.length_match(args, 1):
+            name = input("What is the name of the format to be deleted?: ")
+        else:
+            name = args[0]
+
+        utils.save_formats_to_json(json_path, name, None)
+        """Delete the given format from formats.json.
+        Usage:
+            delete_format <name of format>
+
+        Parameters
+        ----------
+            name of format: str
+                How the format should be called via the read command.
+        """
+        args, kwargs = utils.parse_options(line)
+
+        if not self.length_match(args, 1):
+            name = input("What is the name of the format to be deleted?: ")
+        else:
+            name = args[0]
+
+        utils.save_formats_to_json(name, None)
+
+    ########################
+    # DISPLAY DATA TO USER #
+    ########################
+
+    def do_plot(self, line):
+        """usage: plot |
+            plot <python style list with no spaces, eg [1,2,3]>
+
+            OPTIONS:
+            -s      superimpose the plots
+
+            plots the buffers specified by the given ranges (either integers
+            or python tuples)."""
+        args, kwargs = utils.parse_options(line)
+        if line is '':
+            # default behavior is to plot everything in separate windows.
+            self.savuka.plot_buffers(range(len(self.savuka)))
+        elif '-s' in args:
+            self.savuka.plot_superimposed(utils.string_to_index_list(args[0]))
+        else:
+            self.savuka.plot_buffers(args[0])
+
+        plot_funcs.show()
+
+    def do_print(self, line):
+        """Display the buffers that have been read into the program
+        Usage:
+            print <start> <stop> <step>
 
         Options:
-            None"""
-        if line is "":
+            start: int, optional
+                The first buffer to be displayed. Buffer 0 by default.
+            stop: int, optional
+                The last buffer to be displayed. The last buffer by default.
+            step: int, optional
+                Step size of printing. How many buffers should be skipped. 1 by
+                default, i.e. no buffers are skipped."""
+        args, kwargs = utils.parse_options(line)
+        if args:
+            if not self.length_match(args, 3, "print"):
+                return
+            if not self.type_match((args[0], (int,), "start"),
+                                   (args[1], (int,), "stop"),
+                                   (args[2], (int,), "step"),):
+                return
+            self.savuka.print_buffers(args[0], args[1], args[2])
+        else:
+            # Just display everything
             print(self.savuka)
-            # Todo make line params specify buffer indices and names to print
+
+
+    ###############
+    # MUTATE DATA #
+    ###############
 
     def do_shift(self, line):
         """Add the given amount to all y values of the given buffer.
@@ -215,110 +347,15 @@ class CommandLine(cmd.Cmd):
         args = utils.parseline(line)
         self.savuka.pow_buffer(utils.intify(args[0]), utils.floatify(args[1]))
 
-    def do_add_format(self, line):
-        """Specify a file format and load in file(s) accordingly. Provides the
-        ability to save the format for future use using the read or load commands.
+    def do_svd(self, line):
+        """usage: svd [file path] [# of spectra]
+        Singular value decomposition."""
 
-        Usage:
-            add_format
+        return svd.svd()
 
-        Parameters
-        ----------
-            None
-        """
-        messages = {"cols": "How many columns total?: ",
-                    "data_start": "What line does data start on "
-                                  "(starting from 0)?: ",
-                    "column_name": "What is the name of column {0}?: ",
-                    "n_extra": "How many other dimensions are there?: ",
-                    "v": "What line contains the data from extra "
-                         "dimension {0}? (starting from 0): "}
-        cols = self.ensure_input_type(None, (int,), utils.intify,
-                                      messages['cols'])
-
-        data_start = self.ensure_input_type(None, (int,), utils.intify,
-                                            messages['data_start'])
-
-        data_names = []
-        for x in range(cols):
-            # Don't need to type-match strings
-            column_name = self.ensure_input_type(None, (int,), utils.intify,
-                                                 messages['column_name'].format(x))
-
-            data_names.append(column_name)
-
-        n_extra = self.ensure_input_type(None, (int,), utils.intify,
-                                         messages['n_extra'])
-
-        extra_dimensions = {}
-        for x in range(n_extra):
-            v = self.ensure_input_type(None, (int,), utils.intify,
-                                       messages['v'].format(x))
-            k = input("What is the name of that dimension?: ")
-            extra_dimensions[k] = v
-
-        delimiter = input("What does the file use to separate values? "
-                          "[t for tab, s for space, or , for comma]: ")
-        # convert the answer into an escaped character
-        if delimiter == 't':
-            delimiter = '\t'
-        elif delimiter == 's':
-            delimiter = '\s'
-        elif delimiter == ',':
-            delimiter = ','
-        # otherwise leave it unchanged. Delimiter can be anything.
-
-        save_state = input("Would you like to save this as a permanent file"
-                           "format? [y/n]: ")
-
-        # Save the data in formats.json
-        name = input("What would you like to name the format?: ")
-
-        # Check the types of user input
-
-        utils.save_formats_to_json(json_path, name,
-            {
-                "data_start": data_start,
-                "data_names": data_names,  # reveals number of columns
-                "extra_dimensions": extra_dimensions,
-                "delimiter": delimiter
-            })
-
-    def do_delete_format(self, line):
-        """Delete the specified format from formats.json.
-        Usage:
-            delete_format <name_of_format>
-
-        Parameters
-        ----------
-            name of format: str
-                The format to be deleted from formats.json (in PySavuka/docs).
-        """
-        args, kwargs = utils.parse_options(line)
-
-        if not self.length_match(args, 1):
-            name = input("What is the name of the format to be deleted?: ")
-        else:
-            name = args[0]
-
-        utils.save_formats_to_json(json_path, name, None)
-        """Delete the given format from formats.json.
-        Usage:
-            delete_format <name of format>
-        
-        Parameters
-        ----------
-            name of format: str
-                How the format should be called via the read command.
-        """
-        args, kwargs = utils.parse_options(line)
-
-        if not self.length_match(args, 1):
-            name = input("What is the name of the format to be deleted?: ")
-        else:
-            name = args[0]
-
-        utils.save_formats_to_json(name, None)
+    ###########
+    # FITTING #
+    ###########
 
     def do_models(self, line):
         """list all the descriptions of all available models for fitting.
@@ -510,7 +547,12 @@ class CommandLine(cmd.Cmd):
         self.savuka.plot_x2(param_name, **kwargs)
         plot_funcs.show()
 
+    #######################
+    # CONVENIENCE METHODS #
+    #######################
+
     def do_debug(self, line):
+        """Acts as a test to see if fitting is working correctly. For debugging."""
         self.dr(
             r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv',
             'v')
@@ -522,7 +564,7 @@ class CommandLine(cmd.Cmd):
         self.do_chi_error('deltag')
 
     def dr(self, file_, format):
-        """Read in an example dataset."""
+        """Read in an example dataset. For debugging only"""
         self.savuka.read(file_, format)
 
     def type_match(self, *args):
@@ -539,6 +581,7 @@ class CommandLine(cmd.Cmd):
             for t in types:
                 if isinstance(obj, t):
                     match = True
+                    break
             if not match:
                 print("{0} must be of type(s) {1}. You entered [{2}]"
                       "".format(obj_name, str([t.__name__ for t in types]),
@@ -547,7 +590,7 @@ class CommandLine(cmd.Cmd):
         return True
 
     def ensure_input_type(self, obj, types, f, msg):
-        # Keep asking the user for input until the get it right.
+        """Keep asking the user for input until the get it right."""
         if obj is None:  # initial input
             obj = input(msg)
             return self.ensure_input_type(obj, types, f, msg)

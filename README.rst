@@ -6,19 +6,21 @@ PySavuka is a complete re-design of Savuka - a general purpose global analysis p
 
 Installation
 ============
-Regardless of operating system, it is recommended to install `Anaconda 4.4.0 <https://www.continuum.io/downloads>`_.
+Installation has only been tested on Windows and Unix systems.
 
-Next, download this repo:
+First, download this repo:
 
 .. code-block:: bash
 
     $ git clone https://github.com/mjdiloreto/PySavuka.git
 
-navigate to the PySavuka folder, then:
+Next, navigate to the PySavuka folder, then:
 
 .. code-block:: bash
 
-    $ pip install .
+    $ python setup.py install
+
+If there are more than one python installation on your machine, be sure to use ``python3 setup.py install`` instead.
 
 To use the program, use the pysavuka command in terminal from any directory.
 
@@ -26,17 +28,7 @@ To use the program, use the pysavuka command in terminal from any directory.
 
     $ pysavuka
 
-
-Installation without Anaconda
-=============================
-It is also possible to download the necessary packages in the Anaconda libraries manually.
-First, download and install:
-    `numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy>`_.
-It is important to make sure that you use this version of numpy, and not just the version downloaded by 'pip install numpy' because that will not include the Intel Math Kernal Library.
-Next, install:
-    `scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy>`_.
-
-You should then be able to clone this repository (see above), install it with pip, and use the pysavuka command
+After following these instructions on Windows, it is possible to get an error message complaining that ``tkinter`` is not installed. All python versions since 3.1 have shipped with tkinter, but it is possible to not install it while setting up python. If you have this issue, you will have to `manually installed tkinter <http://www.tkdocs.com/tutorial/install.html#installwin>`_.
 
 
 Usage

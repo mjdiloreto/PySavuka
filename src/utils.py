@@ -253,8 +253,6 @@ def check_input(exceptions_and_params={}):
     the second, etc.), or the name of the kwarg."""
 
     def decorator(f):
-
-        # TODO don't force user to input new param. let them quit
         # wraps the function whose input will be checked.
         def wrapper(*args, **kwargs):
             try:
