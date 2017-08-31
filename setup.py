@@ -3,18 +3,19 @@
 # -*- coding: utf-8 -*-
 
 from codecs import open
-from os import path, system, popen
+from os import path, system, popen, walk
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 from sys import platform, stdout
 
-
+# Get the location of the README.rst file
 here = path.dirname(path.realpath(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-unix_requirements = [  # should work for mac and linux
+
+unix_requirements = [
     'numpy',
     'matplotlib',
     'scipy',
@@ -30,6 +31,11 @@ win32_requirements = [
     # 'scipy'  # installed from docs/windows_requires folder
 ]
 
+test_requirements = [
+    'unittest',
+]
+
+# determine which requirements to use.
 requirements = win32_requirements if platform == 'win32' else unix_requirements
 
 
@@ -118,10 +124,6 @@ class CustomInstallCommand(install):
         install.run(self)
 
 
-test_requirements = [
-    'unittest',
-]
-
 setup(
     cmdclass={'install': CustomInstallCommand},
     name='pysavuka',
@@ -131,13 +133,15 @@ setup(
     author="Matthew DiLoreto",
     author_email='mjdiloreto@gmail.com',
     url='https://github.com/mjdiloreto/pysavuka',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=['src'],
     entry_points={
         'console_scripts': [
             'pysavuka=src.commandline:main',
             ],
         },
     include_package_data=True,
+    # include formats.json and example data in package when installing.
+    package_data={"src": ["docs/*.json", "docs/*.csv"]},
     install_requires=requirements,
     license="MIT",
     classifiers=[

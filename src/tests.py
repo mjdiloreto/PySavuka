@@ -23,9 +23,9 @@ from src import params
 class TestPysavuka(unittest.TestCase):
 
     def setUp(self):
-        self.location = os.path.abspath(os.path.join(__file__, "..\.."))
-        self.xyexample1 = os.path.join(self.location, r'docs\xyexample1.txt')
-        self.xyexample2 = os.path.join(self.location, r'docs\xyexample2.txt')
+        self.location = os.path.abspath(os.path.join(__file__, "../.."))
+        self.xyexample1 = os.path.join(self.location, r'docs/xyexample1.txt')
+        self.xyexample2 = os.path.join(self.location, r'docs/xyexample2.txt')
 
     def test_parsefuncs(self):
 

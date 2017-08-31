@@ -25,7 +25,7 @@ import numpy as np
 from collections import namedtuple
 
 # don't put this file, or src, into a subfolder.
-library_root = os.path.abspath(os.path.join(__file__, "../.."))
+library_root = os.path.abspath(os.path.join(__file__, ".."))
 
 json_path = os.path.join(library_root, r'docs/formats.json')
 
