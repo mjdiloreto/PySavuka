@@ -550,12 +550,12 @@ class CommandLine(cmd.Cmd):
     def do_debug(self, line):
         """Acts as a test to see if fitting is working correctly. For debugging."""
         self.dr(os.path.join(library_root,
-                             r'docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv'
+                             r'docs/data-files-for-pysavuka/svd/cytc-saxs.v.csv'
                              ),
                 'v')
 
         self.dr(os.path.join(library_root,
-                             r'docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv'
+                             r'docs/data-files-for-pysavuka/svd/cytc-tcspc-v-vectors.csv'
                              ),
                 'v_vectors')
         self.do_fit('(28,29,30) two_state')

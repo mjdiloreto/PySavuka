@@ -28,6 +28,8 @@ To use the program, use the pysavuka command in terminal from any directory.
 
     $ pysavuka
 
+ **It is vital to note that the cloned version of this library is NOT the version that is executed when running the ``pysavuka`` command. The version that is run in stored in your python/lib/site-packages directory under the package name src.**
+
 After following these instructions on Windows, it is possible to get an error message complaining that ``tkinter`` is not installed. All python versions since 3.1 have shipped with tkinter, but it is possible to not install it while setting up python. If you have this issue, you will have to `manually installed tkinter <http://www.tkdocs.com/tutorial/install.html#installwin>`_.
 
 Windows Installation
@@ -38,6 +40,7 @@ If you do not have Anaconda installed, it is also possible to download the neces
 First, download:
     `numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy>`_.
 Navigate to your Downloads folder, and run:
+
 .. code-block:: bash
 
     $ pip install numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl
@@ -45,6 +48,7 @@ Navigate to your Downloads folder, and run:
 It is important to make sure that you use this version of numpy, and not just the version downloaded by 'pip install numpy' because that will not include the Intel Math Kernal Library.
 Next, download and install:
     `scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl <http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy>`_.
+
 .. code-block:: bash
 
     $ pip install scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl

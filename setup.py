@@ -3,6 +3,7 @@
 # -*- coding: utf-8 -*-
 
 from codecs import open
+import os
 from os import path, system, popen, walk
 from setuptools import setup, find_packages
 from setuptools.command.install import install
@@ -11,9 +12,19 @@ from sys import platform, stdout
 
 # Get the location of the README.rst file
 here = path.dirname(path.realpath(__file__))
-with open(path.join(here, 'README.rst'), encoding='utf-8') as readme_file:
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
+# any extra files that should be included with the installation of pysavuka
+# should be added to this list. This will add the files to the docs folder
+# of the src package when it is installed on a user's machine.
+files = []
+for path, directories, filenames, in walk(os.path.join(here, 'src/docs')):
+    for filename in filenames:
+        if filename.startswith("cytc"):  # example svd data
+            files.append(os.path.join('..', path, filename))
+        elif "json" in filename:  # actually necessary for program to run.
+            files.append(os.path.join('..', path, filename))
 
 unix_requirements = [
     'numpy',
@@ -87,8 +98,8 @@ class CustomInstallCommand(install):
             import scipy
         except ImportError:
             stdout.write("You must install "
-                         "numpy‑1.13.1+mkl‑cp36‑cp36m‑win_amd64.whl"
-                         "and scipy‑0.19.1‑cp36‑cp36m‑win_amd64.whl from "
+                         "numpy-1.13.1+mkl-cp36-cp36m-win_amd64.whl"
+                         "and scipy-0.19.1-cp36-cp36m-win_amd64.whl from "
                          "http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy. "
                          "Follow the instructions outlined in README.rst")
             raise SystemExit
@@ -154,7 +165,7 @@ setup(
         },
     include_package_data=True,
     # include formats.json and example data in package when installing.
-    package_data={"src": ["docs/*.json", "docs/*.csv"]},
+    package_data={"": files},
     install_requires=requirements,
     license="MIT",
     classifiers=[
