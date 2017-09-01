@@ -547,19 +547,17 @@ class CommandLine(cmd.Cmd):
     # CONVENIENCE METHODS #
     #######################
 
-    def do_check(self, line):
-        print(json_path)
-        print(os.path.dirname(os.path.abspath(__file__)))
-
     def do_debug(self, line):
         """Acts as a test to see if fitting is working correctly. For debugging."""
-        self.dr(
-            r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\src\docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv',
-            'v')
+        self.dr(os.path.join(library_root,
+                             r'docs\data-files-for-pysavuka\svd\cytc-saxs.v.csv'
+                             ),
+                'v')
 
-        self.dr(
-        r'C:\Users\mjdil\Documents\work\Pycharm Projects\PySavuka\src\docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv',
-                 'v_vectors')
+        self.dr(os.path.join(library_root,
+                             r'docs\data-files-for-pysavuka\svd\cytc-tcspc-v-vectors.csv'
+                             ),
+                'v_vectors')
         self.do_fit('(28,29,30) two_state')
         self.do_chi_error('deltag')
 

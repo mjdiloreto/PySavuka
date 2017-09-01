@@ -28,7 +28,7 @@ win32_requirements = [
     'PyQt5',
     'lmfit'
     # 'numpy',  # must be installed manually (Don't go down this rabbit hole).
-    # 'scipy'  # must be installed manually (Don't go down this rabbit hole).
+    # 'scipy',  # must be installed manually (Don't go down this rabbit hole).
 ]
 
 test_requirements = [
@@ -40,14 +40,18 @@ requirements = win32_requirements if platform == 'win32' else unix_requirements
 
 
 class CustomInstallCommand(install):
-    """Custom install setup to help run shell commands (outside shell) before installation"""
+    """Custom install setup to help run shell commands (outside shell)
+    before installation"""
 
     # either pip or pip3, depending on which version(s) of python are installed.
     _pip = "pip"
 
+    # change to brew or port for mac
+    _apt = 'apt-get'
+
     _requirements = requirements
 
-    def _which_pip(self, plat):
+    def _init_cmd_tools(self, plat):
         """Determines which version of pip to use, pip or pip3."""
         if plat == 'win32':
             # Use the where command to find python, then find version number.
@@ -56,17 +60,25 @@ class CustomInstallCommand(install):
 
             # if python is automatically 3, then pip == pip3
             if version.startswith("Python 3."):
-                self._pip = "pip"
+                self._pip = 'pip'
             # 90% sure python aliases pip to pip3 when downloading python3 on
             # top of python 2.
             elif version.startswith("Python 2."):
-                self._pip = "pip3"
-
+                self._pip = 'pip3'
+        elif plat == 'darwin':
+            # either brew or port, not sure which is better.
+            # install brew
+            brew = popen("which brew").read()
+            if not brew:  # install brew if it isn't already.
+                system("/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
+            self._apt = 'brew'
+            system("sudo {0} install python3-pip".format(self._apt))
+            self._pip = 'pip3'
         # I've found that PyQt5 ONLY installs with pip3.
         elif plat.startswith("linux"):
             # install pip3.
-            system("sudo apt-get install python3-pip")
-            self._pip = "pip3"
+            system("sudo {0} install python3-pip".format(self._apt))
+            self._pip = 'pip3'
 
     def windows_install(self):
         # Does not check for tkinter. Should be included in any new python
@@ -84,17 +96,14 @@ class CustomInstallCommand(install):
             import tkinter
         except ImportError:
             stdout.write("You must have tkinter installed. You can either "
-                         "reinstall Python 3.6.1, or follow the instructions at"
-                         " http://www.tkdocs.com/tutorial/install.html#installwin"
-                         "\n Link to the site is in README.rst.")
+                "reinstall Python 3.6.1, or follow the instructions at"
+                " http://www.tkdocs.com/tutorial/install.html#installwin"
+                "\nLink to the site is in README.rst.")
             raise SystemExit
 
     def mac_install(self):
-        # TODO add support for Mac. I (mjdiloreto@gmail.com) don't have an os to play with.
-
-        # To implement, try the unix stuff, probably make sure brew or port
-        # are downloaded, install tkinter if not included, then see which
-        # unix calls break, and replace them with mac-specific commands.
+        # 90% sure this will work. Once brew is installed, the packages should
+        # be exactly identical. Has not been tested.
         self.unix_install()
 
     def unix_install(self):
@@ -102,7 +111,7 @@ class CustomInstallCommand(install):
             import tkinter
         except ImportError:
             stdout.write("Collecting tkinter...\n")
-            system("sudo apt-get install python3-tk")
+            system("sudo {0} install python3-tk".format(self._apt))
         try:
             import PyQt5
         except ImportError:
@@ -115,7 +124,8 @@ class CustomInstallCommand(install):
             system("{0} install {1}".format(self._pip, req))
 
     def run(self):
-        self._which_pip(platform)
+        self._init_cmd_tools(platform)
+
         if platform == 'win32':
             self.windows_install()
         elif platform.startswith('linux'):
@@ -149,7 +159,6 @@ setup(
     license="MIT",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.3',
