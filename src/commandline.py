@@ -601,6 +601,9 @@ class CommandLine(cmd.Cmd):
             return self.ensure_input_type(obj, types, f, msg)
         return correct
 
+    def do_check(self, line):
+        print("works ell")
+
     def length_match(self, tup, length, command):
         """Return True iff len(tup) == length. Otherwise print help text for
         the command"""

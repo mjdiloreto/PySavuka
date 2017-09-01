@@ -7,6 +7,7 @@ import os
 from os import path, system, popen, walk
 from setuptools import setup, find_packages
 from setuptools.command.install import install
+from setuptools.command.develop import develop
 
 from sys import platform, stdout
 
@@ -50,6 +51,21 @@ test_requirements = [
 requirements = win32_requirements if platform == 'win32' else unix_requirements
 
 
+class CustomDevelopCommand(develop):
+    """We need to delete the src package from site-packages after running
+    to be sure that the user is referencing their own(changing) code instead
+    of the site-packages(static) code."""
+    def run(self):
+        develop.run(self)
+        stdout.write("Removing src folder from site-packages.\n")
+        if platform == 'win32':
+            system("rmdir /s \"{0}\"".format(os.path.join(self.install_dir,
+                                                          'src')))
+        else:
+            system("rmdir -r \"{0}\"".format(os.path.join(self.install_dir,
+                                                          'src')))
+
+
 class CustomInstallCommand(install):
     """Custom install setup to help run shell commands (outside shell)
     before installation"""
@@ -67,7 +83,7 @@ class CustomInstallCommand(install):
         if plat == 'win32':
             # Use the where command to find python, then find version number.
             pypath = popen("where python").read()
-            version = popen("{0} --version".format(pypath)).read()
+            version = popen("\"{0}\" --version".format(pypath)).read()
 
             # if python is automatically 3, then pip == pip3
             if version.startswith("Python 3."):
@@ -149,7 +165,8 @@ class CustomInstallCommand(install):
 
 
 setup(
-    cmdclass={'install': CustomInstallCommand},
+    cmdclass={'install': CustomInstallCommand,
+              'develop': CustomDevelopCommand},
     name='pysavuka',
     version='1.0',
     description="pysavuka",

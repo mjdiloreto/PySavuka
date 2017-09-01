@@ -30,6 +30,14 @@ To use the program, use the pysavuka command in terminal from any directory.
 
  **It is vital to note that the cloned version of this library is NOT the version that is executed when running the ``pysavuka`` command. The version that is run in stored in your python/lib/site-packages directory under the package name src.**
 
+If you plan on doing any sort of development, after completing the previous steps, you should run:
+
+.. code-block:: bash
+
+    $ python setup.py develop
+
+This command will link the cloned version of pysavuka to site-packages, i.e. changing the code in the cloned version will show an effect when running the program.
+
 After following these instructions on Windows, it is possible to get an error message complaining that ``tkinter`` is not installed. All python versions since 3.1 have shipped with tkinter, but it is possible to not install it while setting up python. If you have this issue, you will have to `manually installed tkinter <http://www.tkdocs.com/tutorial/install.html#installwin>`_.
 
 Windows Installation
