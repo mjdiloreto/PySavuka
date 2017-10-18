@@ -4,7 +4,8 @@
 
 from codecs import open
 import os
-from os import path, system, popen, walk
+from os import path, system, walk
+from subprocess import Popen, PIPE
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 from setuptools.command.develop import develop
@@ -78,13 +79,18 @@ class CustomInstallCommand(install):
 
     _requirements = requirements
 
+    
+    def _sub_read(self, cmd_list, shell=False, stdout=PIPE):
+        """Start a subprocess with the given command and return the string of stdout."""
+        return Popen(cmd_list, shell=shell, stdout=stdout).stdout.read().strip().decode("utf-8")
+    
     def _init_cmd_tools(self, plat):
         """Determines which version of pip to use, pip or pip3."""
         if plat == 'win32':
             # Use the where command to find python, then find version number.
-            pypath = popen("where python").read()
-            version = popen("\"{0}\" --version".format(pypath)).read()
-
+            pypath = self._sub_read(["where", "python"], shell=True)
+            version = self._sub_read([pypath, "--version"])
+            # version = "Python 3.6"
             # if python is automatically 3, then pip == pip3
             if version.startswith("Python 3."):
                 self._pip = 'pip'
@@ -95,7 +101,7 @@ class CustomInstallCommand(install):
         elif plat == 'darwin':
             # either brew or port, not sure which is better.
             # install brew
-            brew = popen("which brew").read()
+            brew = self._sub_read(["which", "brew"], shell=True)
             if not brew:  # install brew if it isn't already.
                 system("/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
             self._apt = 'brew'
