@@ -28,7 +28,7 @@ To use the program, use the pysavuka command in terminal from any directory.
 
     $ pysavuka
 
- **It is vital to note that the cloned version of this library is NOT the version that is executed when running the ``pysavuka`` command. The version that is run in stored in your python/lib/site-packages directory under the package name src.**
+ **It is vital to note that the cloned version of this library is NOT the version that is executed when running the ``pysavuka`` command. The version that is run is stored in your python/lib/site-packages directory under the package name src.**
 
 If you plan on doing any sort of development, after completing the previous steps, you should run:
 
